@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ============================== -->
+    <!-- App Identity                   -->
+    <!-- ============================== -->
+    <string name="app_name">TARZO</string>
+    <string name="app_tagline">Technology-Assisted Responsive &amp; Intelligent Zero-Operator</string>
+    <string name="app_version">1.0.0</string>
+
+    <!-- ============================== -->
+    <!-- Permission Rationales          -->
+    <!-- ============================== -->
+    <string name="permission_accessibility_title">Accessibility Service Chahiye</string>
+    <string name="permission_accessibility_message">TARZO ko aapke screen ko read karne ki zaroorat hai taaki wo commands automatically execute kar sake. Yeh safe hai – koi data collect nahi hota sirf on-device processing hoti hai.</string>
+    <string name="permission_overlay_title">Overlay Permission Dijiye</string>
+    <string name="permission_overlay_message">TARZO floating controls dikhane ke liye overlay permission chahiye. Isse aap kisi bhi screen se TARZO control kar sakte ho.</string>
+    <string name="permission_camera_title">Camera Access Chahiye</string>
+    <string name="permission_camera_message">TARZO camera se photos aur videos capture karne ke liye permission mangta hai. Yeh sirf tab use hoga jab aap explicitly bolenge ya command doge.</string>
+    <string name="permission_microphone_title">Microphone Access Chahiye</string>
+    <string name="permission_microphone_message">TARZO ko aapki awaaz sunni hai voice commands process karne ke liye. Audio sirf locally process hota hai, kahi upload nahi hota.</string>
+    <string name="permission_notification_title">Notification Access Dijiye</string>
+    <string name="permission_notification_message">TARZO notifications read karke intelligent actions perform kar sakta hai. Example: incoming call pe automatically speaker on karna.</string>
+    <string name="permission_storage_title">Storage Permission Chahiye</string>
+    <string name="permission_storage_message">Photos aur videos save karne ke liye TARZO ko storage access chahiye. Files sirf aapke device pe store hoti hain.</string>
+    <string name="permission_battery_title">Battery Optimization Disable Karein</string>
+    <string name="permission_battery_message">TARZO background mein smoothly chalne ke liye battery optimization se bahar rakhna padega. Warna voice commands kaam nahi karenge background mein.</string>
+    <string name="permission_phone_title">Phone State Access</string>
+    <string name="permission_phone_message">Incoming/outgoing calls detect karne ke liye TARZO ko phone state read karna hoga.</string>
+
+    <!-- ============================== -->
+    <!-- Notification Channels          -->
+    <!-- ============================== -->
+    <string name="notification_channel_voice">Voice Commands</string>
+    <string name="notification_channel_voice_desc">Voice command processing ke liye notifications</string>
+    <string name="notification_channel_service">Foreground Service</string>
+    <string name="notification_channel_service_desc">TARZO background service running status</string>
+    <string name="notification_channel_automation">Automation Alerts</string>
+    <string name="notification_channel_automation_desc">Automated actions ki notifications</string>
+    <string name="notification_channel_errors">Errors &amp; Warnings</string>
+    <string name="notification_channel_errors_desc">App errors aur important warnings</string>
+    <string name="notification_channel_system">System Updates</string>
+    <string name="notification_channel_system_desc">App updates aur system-level notifications</string>
+
+    <!-- ============================== -->
+    <!-- Notification Content           -->
+    <!-- ============================== -->
+    <string name="notification_service_title">TARZO Active</string>
+    <string name="notification_service_message">Voice assistant ready – boliye "Hey TARZO"</string>
+    <string name="notification_listening_title">TARZO Sun Raha Hai…</string>
+    <string name="notification_listening_message">Command de rahe hain, processing…</string>
+    <string name="notification_action_complete">Command execute ho gaya ✓</string>
+    <string name="notification_action_failed">Command fail ho gaya ✗</string>
+
+    <!-- ============================== -->
+    <!-- Main Screen / Home             -->
+    <!-- ============================== -->
+    <string name="home_title">TARZO Dashboard</string>
+    <string name="home_status_active">Active</string>
+    <string name="home_status_inactive">Inactive</string>
+    <string name="home_status_listening">Listening…</string>
+    <string name="home_status_processing">Processing…</string>
+    <string name="home_orb_label">TARZO Voice Orb</string>
+    <string name="home_orb_description">Tap karke voice command do ya "Hey TARZO" boliye</string>
+    <string name="home_recent_commands">Recent Commands</string>
+    <string name="home_no_commands_yet">Koi command nahi mila. "Hey TARZO" boliye shuru karne ke liye!</string>
+    <string name="home_quick_actions">Quick Actions</string>
+    <string name="home_permission_status">Permissions Status</string>
+    <string name="home_all_permissions_granted">Sab permissions grant hain ✓</string>
+    <string name="home_permissions_missing">%d permissions pending hain</string>
+
+    <!-- ============================== -->
+    <!-- Voice / Speech                 -->
+    <!-- ============================== -->
+    <string name="voice_wake_word">Hey TARZO</string>
+    <string name="voice_listening_prompt">Boliye…</string>
+    <string name="voice_processing">Samajh raha hoon…</string>
+    <string name="voice_command_recognized">Command: %s</string>
+    <string name="voice_error_generic">Awaaz samajh nahi aayi. Dobara try karein.</string>
+    <string name="voice_error_network">Network issue hai. Offline mode mein try karein.</string>
+    <string name="voice_error_microphone">Microphone access nahi mil raha. Settings se permission dein.</string>
+    <string name="voice_error_too_quiet">Bohot kam awaaz aa rahi hai. Thoda aur boliye.</string>
+    <string name="voice_error_too_loud">Awaaz bohot tez hai. Thoda kam boliye.</string>
+    <string name="voice_confidence_low">Mujhe sure nahi hai. Kya aapne kaha: "%s"?</string>
+    <string name="voice_supported_commands">Supported Commands Dekhen</string>
+    <string name="voice_tts_enabled">Voice feedback ON hai</string>
+    <string name="voice_tts_disabled">Voice feedback OFF hai</string>
+
+    <!-- ============================== -->
+    <!-- Automation Screen              -->
+    <!-- ============================== -->
+    <string name="automation_title">Automations</string>
+    <string name="automation_create_new">Naya Automation Banao</string>
+    <string name="automation_edit">Edit Karein</string>
+    <string name="automation_delete">Delete Karein</string>
+    <string name="automation_enable">Enable Karein</string>
+    <string name="automation_disable">Disable Karein</string>
+    <string name="automation_name">Automation Ka Naam</string>
+    <string name="automation_trigger">Trigger</string>
+    <string name="automation_action">Action</string>
+    <string name="automation_condition">Condition</string>
+    <string name="automation_no_automations">Koi automation nahi hai. Ek banao!</string>
+    <string name="automation_running">Chal raha hai…</string>
+    <string name="automation_last_run">Last run: %s</string>
+    <string name="automation_run_count">%d baar chala chuka hai</string>
+
+    <!-- ============================== -->
+    <!-- Settings Screen                -->
+    <!-- ============================== -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_category_voice">Voice Settings</string>
+    <string name="settings_wake_word">Wake Word</string>
+    <string name="settings_wake_word_summary">"Hey TARZO" se assistant activate hoga</string>
+    <string name="settings_wake_word_sensitivity">Wake Word Sensitivity</string>
+    <string name="settings_language">Language / Bhasha</string>
+    <string name="settings_language_summary">Hinglish (default) – Hindi + English mix</string>
+    <string name="settings_voice_feedback">Voice Feedback</string>
+    <string name="settings_voice_feedback_summary">TARZO har command pe bolke confirm karega</string>
+    <string name="settings_speech_rate">Speech Rate</string>
+    <string name="settings_pitch">Voice Pitch</string>
+    <string name="settings_category_automation">Automation Settings</string>
+    <string name="settings_auto_start">Auto-Start on Boot</string>
+    <string name="settings_auto_start_summary">Phone on hone pe TARZO automatically start hoga</string>
+    <string name="settings_haptic_feedback">Haptic Feedback</string>
+    <string name="settings_haptic_feedback_summary">Commands pe vibration hoga</string>
+    <string name="settings_notification_sound">Notification Sound</string>
+    <string name="settings_category_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_dark">Dark (Default)</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_system">System Default</string>
+    <string name="settings_orb_style">Orb Animation Style</string>
+    <string name="settings_orb_style_pulse">Pulse</string>
+    <string name="settings_orb_style_wave">Wave</string>
+    <string name="settings_orb_style_glow">Glow</string>
+    <string name="settings_category_security">Security &amp; Privacy</string>
+    <string name="settings_data_collection">On-Device Processing</string>
+    <string name="settings_data_collection_summary">Saara data locally process hota hai. Koi data server pe nahi jaata.</string>
+    <string name="settings_command_history">Command History</string>
+    <string name="settings_command_history_summary">Pichle commands ka record rakhein ya delete karein</string>
+    <string name="settings_clear_history">Clear Command History</string>
+    <string name="settings_export_data">Export Data</string>
+    <string name="settings_export_data_summary">Apna data backup mein save karein</string>
+    <string name="settings_category_about">About</string>
+    <string name="settings_version">Version %s</string>
+    <string name="settings_open_source_licenses">Open Source Licenses</string>
+    <string name="settings_privacy_policy">Privacy Policy</string>
+    <string name="settings_terms_of_service">Terms of Service</string>
+    <string name="settings_feedback">Send Feedback</string>
+    <string name="settings_developer_options">Developer Options</string>
+    <string name="settings_log_level">Log Level</string>
+    <string name="settings_show_overlay_debug">Show Overlay Debug Info</string>
+
+    <!-- ============================== -->
+    <!-- Command History Screen         -->
+    <!-- ============================== -->
+    <string name="history_title">Command History</string>
+    <string name="history_empty">Koi command history nahi hai.</string>
+    <string name="history_clear_all">Sab Clear Karein</string>
+    <string name="history_search">Commands search karein…</string>
+    <string name="history_filter_all">All</string>
+    <string name="history_filter_successful">Successful</string>
+    <string name="history_filter_failed">Failed</string>
+
+    <!-- ============================== -->
+    <!-- Error Messages                 -->
+    <!-- ============================== -->
+    <string name="error_generic">Kuch gadbad ho gayi. Dobara try karein.</string>
+    <string name="error_accessibility_disabled">Accessibility service off hai. Settings > Accessibility > TARZO se on karein.</string>
+    <string name="error_overlay_disabled">Overlay permission nahi hai. Settings > Apps > TARZO > Display over other apps pe jaake on karein.</string>
+    <string name="error_service_crashed">TARZO service crash ho gaya. Automatically restart ho raha hai…</string>
+    <string name="error_network_unavailable">Internet nahi chal raha. Kuch commands offline kaam nahi karenge.</string>
+    <string name="error_tts_init">Text-to-Speech initialize nahi ho paya.</string>
+    <string name="error_stt_init">Speech recognition available nahi hai is device pe.</string>
+    <string name="error_camera_failed">Camera open nahi ho paya. Koi aur app use kar rahi hogi.</string>
+    <string name="error_storage_full">Storage full hai. Kuch files delete karein.</string>
+    <string name="error_command_not_found">Yeh command samajh nahi aaya: "%s"</string>
+    <string name="error_automation_failed">Automation "%s" fail ho gaya.</string>
+    <string name="error_permission_denied">Permission denied: %s</string>
+    <string name="error_device_unsupported">Yeh feature is device pe available nahi hai.</string>
+
+    <!-- ============================== -->
+    <!-- Confirmation Prompts           -->
+    <!-- ============================== -->
+    <string name="confirm_delete_automation">Kya aap "%s" automation delete karna chahte hain?</string>
+    <string name="confirm_clear_history">Kya aap saari command history clear karna chahte hain? Yeh undo nahi hoga.</string>
+    <string name="confirm_stop_service">Kya aap TARZO service band karna chahte hain?</string>
+    <string name="confirm_reset_settings">Kya aap saare settings reset karna chahte hain?</string>
+    <string name="confirm_exit">Kya aap TARZO exit karna chahte hain? Background service bhi band ho jayegi.</string>
+    <string name="confirm_enable_accessibility">Accessibility service on karne ke liye TARZO settings page pe jana hoga. Jaayen?</string>
+    <string name="confirm_camera_capture">Photo capture karni hai. Camera open ho raha hai…</string>
+    <string name="confirm_video_record">Video recording start karni hai. Kya ready hain?</string>
+
+    <!-- ============================== -->
+    <!-- Accessibility Descriptions     -->
+    <!-- ============================== -->
+    <string name="a11y_orb_tap">Voice command activate karne ke liye tap karein</string>
+    <string name="a11y_orb_active">Voice orb active hai, sun raha hai</string>
+    <string name="a11y_orb_inactive">Voice orb inactive hai</string>
+    <string name="a11y_fab_menu">Floating action button menu</string>
+    <string name="a11y_toggle_service">TARZO service on ya off karein</string>
+    <string name="a11y_navigation_home">Home screen pe jaayen</string>
+    <string name="a11y_navigation_automations">Automations screen pe jaayen</string>
+    <string name="a11y_navigation_settings">Settings screen pe jaayen</string>
+    <string name="a11y_navigation_history">Command history dekhein</string>
+    <string name="a11y_command_item">Command: %s, status: %s</string>
+    <string name="a11y_permission_granted">Permission grant ho gayi</string>
+    <string name="a11y_permission_denied">Permission denied hai, tap karke grant karein</string>
+    <string name="a11y_switch_on">On hai</string>
+    <string name="a11y_switch_off">Off hai</string>
+    <string name="a11y_slider_value">Value: %d</string>
+    <string name="a11y_notification_voice">Voice command notification</string>
+    <string name="a11y_notification_service">TARZO service notification</string>
+    <string name="a11y_overlay_controls">TARZO floating controls</string>
+    <string name="a11y_dismiss_overlay">Overlay dismiss karne ke liye swipe down karein</string>
+
+    <!-- ============================== -->
+    <!-- Overlay / Floating UI           -->
+    <!-- ============================== -->
+    <string name="overlay_mic_button">Microphone</string>
+    <string name="overlay_home_button">Home</string>
+    <string name="overlay_back_button">Back</string>
+    <string name="overlay_close">Close Overlay</string>
+    <string name="overlay_minimize">Minimize</string>
+    <string name="overlay_drag_hint">Drag karke position change karein</string>
+
+    <!-- ============================== -->
+    <!-- Misc / General                 -->
+    <!-- ============================== -->
+    <string name="btn_ok">OK</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_yes">Haan</string>
+    <string name="btn_no">Nahi</string>
+    <string name="btn_save">Save</string>
+    <string name="btn_delete">Delete</string>
+    <string name="btn_close">Close</string>
+    <string name="btn_retry">Retry</string>
+    <string name="btn_grant">Grant Permission</string>
+    <string name="btn_open_settings">Open Settings</string>
+    <string name="btn_learn_more">Learn More</string>
+    <string name="label_loading">Loading…</string>
+    <string name="label_empty_state">Yahan kuch nahi hai</string>
+    <string name="label_coming_soon">Coming Soon!</string>
+    <string name="label_beta">Beta</string>
+    <string name="label_new">New</string>
+    <string name="label_pro">Pro</string>
+    <string name="toast_saved">Save ho gaya!</string>
+    <string name="toast_deleted">Delete ho gaya!</string>
+    <string name="toast_copied">Clipboard pe copy ho gaya</string>
+    <string name="toast_permission_granted">Permission grant ho gayi ✓</string>
+    <string name="toast_permission_denied">Permission deny ho gayi. Settings se manually dein.</string>
+    <string name="toast_settings_reset">Settings reset ho gaye</string>
+    <string name="splash_subtitle">Initializing TARZO AI…</string>
+</resources>

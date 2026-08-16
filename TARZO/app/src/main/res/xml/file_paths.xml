@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- External pictures directory for camera photos -->
+    <external-path
+        name="external-pictures"
+        path="Pictures/TARZO/" />
+
+    <!-- External movies directory for camera videos -->
+    <external-path
+        name="external-movies"
+        path="Movies/TARZO/" />
+
+    <!-- Internal cache for temporary files (processing, temp captures) -->
+    <cache-path
+        name="cache"
+        path="." />
+
+    <!-- External cache for larger temporary files -->
+    <external-cache-path
+        name="external-cache"
+        path="." />
+
+</paths>

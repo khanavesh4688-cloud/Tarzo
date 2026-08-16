@@ -1,0 +1,46 @@
+# ===========================================================
+# TARZO Wake Word Model - PLACEHOLDER
+# ===========================================================
+#
+# This is a placeholder file for the wake word detection model.
+# The actual wake word model is a binary file that is loaded
+# at runtime by the wake word engine.
+#
+# HOW TO INTEGRATE A REAL MODEL:
+#
+# 1. PicoVoice Porcupine:
+#    - Sign up at https://console.picovoice.ai/
+#    - Train a custom wake word "Hey TARZO" using Porcupine Console
+#    - Download the .ppn binary model file
+#    - Place it in res/raw/ as wake_word_model.ppn
+#    - Initialize in code:
+#      val porcupine = Porcupine.Builder()
+#          .setAccessKey("YOUR_ACCESS_KEY")
+#          .setKeywordPath("${context.cacheDir}/wake_word_model.ppn")
+#          .build()
+#
+# 2. Snowboy (deprecated but usable):
+#    - Use snowboy website to train "Hey TARZO" model
+#    - Download .pmdl file
+#    - Place in res/raw/
+#    - Use snowboy-detect-android library
+#
+# 3. TensorFlow Lite / Custom:
+#    - Train a custom keyword spotting model
+#    - Export as .tflite
+#    - Place in assets/ or res/raw/
+#    - Load with TensorFlow Lite interpreter
+#
+# 4. Android 12+ (API 31) AlwaysOnHotwordDetector:
+#    - Use system built-in hotword detection
+#    - No model file needed, but limited to system-defined wake words
+#    - For custom words, use one of the above solutions
+#
+# NOTE: For the open-source community build, a pre-trained .ppn or
+# .tflite model should be bundled. For privacy-focused builds,
+# the model runs entirely on-device.
+#
+# Wake word: "Hey TARZO"
+# Language: Hinglish (Hindi + English mix)
+# Expected sensitivity: 0.5 - 0.8
+# ===========================================================

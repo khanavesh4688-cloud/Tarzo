@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    TARZO Accessibility Service Configuration
+
+    This config enables TARZO to observe and interact with the screen
+    for automated command execution. All processing happens on-device.
+
+    Gesture mapping for scroll/click actions is handled programmatically
+    in TarzoAccessibilityService.kt via:
+      - performGlobalAction(GLOBAL_ACTION_SCROLL_FORWARD)
+      - performGlobalAction(GLOBAL_ACTION_SCROLL_BACKWARD)
+      - AccessibilityNodeInfo.performAction(ACTION_CLICK)
+      - AccessibilityNodeInfo.performAction(ACTION_SCROLL_FORWARD)
+-->
+<accessibility-service
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged|typeViewClicked|typeViewFocused|typeViewTextChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagDefault|flagReportViewIds|flagRetrieveInteractiveWindows|flagIncludeNotImportantViews"
+    android:canRetrieveWindowContent="true"
+    android:notificationTimeout="100"
+    android:description="TARZO Screen Automation"
+    android:settingsActivity="com.tarzo.ui.MainActivity" />

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ======================================== -->
+    <!-- TARZO Dark Theme Color Palette            -->
+    <!-- Mirrors Compose color definitions         -->
+    <!-- ======================================== -->
+
+    <!-- Core Background -->
+    <color name="tarzo_dark">#0A0E17</color>
+    <color name="tarzo_surface">#111827</color>
+    <color name="tarzo_card">#1A2235</color>
+
+    <!-- Accent Colors -->
+    <color name="tarzo_accent">#00D4FF</color>
+    <color name="tarzo_accent_secondary">#7C3AED</color>
+
+    <!-- Text -->
+    <color name="tarzo_text_primary">#F1F5F9</color>
+    <color name="tarzo_text_secondary">#94A3B8</color>
+
+    <!-- Status Colors -->
+    <color name="tarzo_success">#22C55E</color>
+    <color name="tarzo_warning">#F59E0B</color>
+    <color name="tarzo_error">#EF4444</color>
+
+    <!-- Voice Orb Gradient -->
+    <color name="tarzo_orb_start">#00D4FF</color>
+    <color name="tarzo_orb_end">#7C3AED</color>
+
+    <!-- ======================================== -->
+    <!-- Semantic & Utility Colors                -->
+    <!-- ======================================== -->
+
+    <!-- Material-alias colors for theme compatibility -->
+    <color name="md_theme_dark_background">#0A0E17</color>
+    <color name="md_theme_dark_surface">#111827</color>
+    <color name="md_theme_dark_on_surface">#F1F5F9</color>
+    <color name="md_theme_dark_primary">#00D4FF</color>
+    <color name="md_theme_dark_on_primary">#0A0E17</color>
+    <color name="md_theme_dark_secondary">#7C3AED</color>
+    <color name="md_theme_dark_error">#EF4444</color>
+
+    <!-- Overlay / Scrim -->
+    <color name="tarzo_scrim">#B3000000</color>
+    <color name="tarzo_overlay_background">#CC111827</color>
+
+    <!-- Splash -->
+    <color name="tarzo_splash_background">#0A0E17</color>
+
+    <!-- Notification icon background (required: single color for silhouettes) -->
+    <color name="tarzo_notification_icon_tint">#FFFFFF</color>
+
+    <!-- Translucent variants for backgrounds -->
+    <color name="tarzo_accent_10">#1A00D4FF</color>
+    <color name="tarzo_accent_20">#3300D4FF</color>
+    <color name="tarzo_accent_50">#8000D4FF</color>
+    <color name="tarzo_accent_secondary_10">#1A7C3AED</color>
+    <color name="tarzo_accent_secondary_20">#337C3AED</color>
+
+    <!-- Divider -->
+    <color name="tarzo_divider">#1E293B</color>
+
+    <!-- Selection highlight -->
+    <color name="tarzo_selection">#1A00D4FF</color>
+</resources>

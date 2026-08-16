@@ -1,0 +1,13 @@
+# TARZO ProGuard Rules
+-dontwarn com.google.mlkit.**
+-keep class com.google.mlkit.** { *; }
+-keep class com.google.android.gms.internal.mlkit_vision_text.** { *; }
+-keep class com.google.gson.** { *; }
+-keep class retrofit2.** { *; }
+-keep class okhttp3.** { *; }
+-keep class dagger.hilt.** { *; }
+-keepclassmembers class * {{ @dagger.hilt.** *; }}
+-keep class com.tarzo.ai.** { *; }
+-keepclassmembers class com.tarzo.ai.data.local.** { *; }
+-keepattributes *Annotation*
+-keepattributes SourceFile,LineNumberTable
