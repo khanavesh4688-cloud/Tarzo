@@ -170,6 +170,6 @@ class SecureStorage @Inject constructor(
         private const val KEY_CUSTOM_ENDPOINT_PREFIX = "custom_endpoint_"
         private const val KEY_DEFAULT_KEY_SEEDED = "default_key_seeded"
         private const val DEFAULT_API_BASE_URL = ""
-        internal const val DEFAULT_API_KEY = "vck_5yC8mbbPmVfKXF06QvmuXG5zGOYjFm6siYTLIIu9WpddUI4eK90kHrGU"
+        internal const val DEFAULT_API_KEY = "" // Set your API key in app Settings
     }
 }
