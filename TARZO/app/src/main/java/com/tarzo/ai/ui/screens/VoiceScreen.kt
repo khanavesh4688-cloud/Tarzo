@@ -1,5 +1,6 @@
 package com.tarzo.ai.ui.screens
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -88,7 +89,7 @@ fun VoiceScreen(
             state.speechState is SpeechState.PartialResult -> OrbState.LISTENING
 
         state.ttsState == TTSState.SPEAKING -> OrbState.SPEAKING
-        state.speechState is SpeechState.FinalResult -> OrbState.THINKING
+        state.speechState is SpeechState.FinalResult -> OrbState.PROCESSING
         else -> OrbState.IDLE
     }
 
@@ -131,7 +132,7 @@ fun VoiceScreen(
             // ── Orb ───────────────────────────────────────────────
             TarzoOrb(
                 state = orbState,
-                size = 160.dp,
+                size = 160,
             )
 
             Spacer(modifier = Modifier.height(16.dp))

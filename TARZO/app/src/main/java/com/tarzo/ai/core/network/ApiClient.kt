@@ -91,19 +91,25 @@ class ApiClient @Inject constructor(
             .addInterceptor { chain ->
                 val originalRequest = chain.request()
                 val baseUrl = secureStorage.getApiBaseUrl()
+                val requestBuilder = originalRequest.newBuilder()
+                    .header("X-Client-Version", "1.0.0")
+                    .header("Accept", "application/json")
+
+                // Inject user API key if available
+                val apiKey = secureStorage.getApiKey()
+                if (!apiKey.isNullOrBlank()) {
+                    requestBuilder.header("Authorization", "Bearer $apiKey")
+                }
+
                 if (baseUrl.isBlank()) {
-                    return@interceptor chain.proceed(originalRequest)
+                    return@interceptor chain.proceed(requestBuilder.build())
                 }
                 val newUrl = originalRequest.url.newBuilder()
                     .scheme("https")
                     .host(baseUrl.removePrefix("https://").removePrefix("http://").split("/").first())
                     .build()
-                val newRequest = originalRequest.newBuilder()
-                    .url(newUrl)
-                    .header("X-Client-Version", "1.0.0")
-                    .header("Accept", "application/json")
-                    .build()
-                chain.proceed(newRequest)
+                requestBuilder.url(newUrl)
+                chain.proceed(requestBuilder.build())
             }
             .build()
     }

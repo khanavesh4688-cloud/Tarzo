@@ -1,28 +1,13 @@
 package com.tarzo.ai.core.storage
 
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Entity
-import androidx.room.Index
-import androidx.room.Insert
-import androidx.room.PrimaryKey
-import androidx.room.Query
-import androidx.room.Database
-import androidx.room.RoomDatabase
-import androidx.room.migration.Migration
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 import javax.inject.Singleton
 
-@Entity(
-    tableName = "memories",
-    indices = [Index(value = ["category"]), Index(value = ["timestamp"])]
-)
 data class MemoryItem(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val id: Long = 0,
     val content: String,
     val category: String = CATEGORY_FACT,
     val timestamp: Long = System.currentTimeMillis()
@@ -35,68 +20,53 @@ data class MemoryItem(
     }
 }
 
-@Dao
-interface MemoryDao {
-    @Insert
-    suspend fun insert(memoryItem: MemoryItem): Long
+@Singleton
+class MemoryDao @Inject constructor() {
+    private val memories = MutableStateFlow(mutableListOf<MemoryItem>())
+    private val nextId = java.util.concurrent.atomic.AtomicLong(1L)
 
-    @Insert
-    suspend fun insertAll(items: List<MemoryItem>): List<Long>
+    suspend fun insert(memoryItem: MemoryItem): Long {
+        val newId = nextId.getAndIncrement()
+        val item = memoryItem.copy(id = newId)
+        memories.value.add(item)
+        return newId
+    }
 
-    @Delete
-    suspend fun delete(memoryItem: MemoryItem)
+    suspend fun insertAll(items: List<MemoryItem>): List<Long> {
+        val ids = mutableListOf<Long>()
+        for (item in items) { ids.add(insert(item)) }
+        return ids
+    }
 
-    @Query("DELETE FROM memories WHERE id = :id")
-    suspend fun deleteById(id: Long)
+    suspend fun delete(memoryItem: MemoryItem) {
+        memories.value.removeAll { it.id == memoryItem.id }
+    }
 
-    @Query("DELETE FROM memories WHERE content LIKE :keyword")
-    suspend fun deleteByContent(keyword: String): Int
+    suspend fun deleteById(id: Long) {
+        memories.value.removeAll { it.id == id }
+    }
 
-    @Query("SELECT * FROM memories ORDER BY timestamp DESC")
-    fun getAll(): Flow<List<MemoryItem>>
+    fun getAll(): Flow<List<MemoryItem>> = memories.map { it.toList() }
 
-    @Query("SELECT * FROM memories WHERE category = :category ORDER BY timestamp DESC")
-    fun getByCategory(category: String): Flow<List<MemoryItem>>
+    fun getByCategory(category: String): Flow<List<MemoryItem>> =
+        memories.map { list -> list.filter { it.category == category } }
 
-    @Query("SELECT * FROM memories WHERE content LIKE '%' || :query || '%' ORDER BY timestamp DESC")
-    fun searchByContent(query: String): Flow<List<MemoryItem>>
+    fun searchByContent(query: String): Flow<List<MemoryItem>> =
+        memories.map { list -> list.filter { it.content.contains(query, ignoreCase = true) } }
 
-    @Query("SELECT * FROM memories WHERE id = :id")
-    suspend fun getById(id: Long): MemoryItem?
+    suspend fun getById(id: Long): MemoryItem? = memories.value.find { it.id == id }
 
-    @Query("SELECT COUNT(*) FROM memories")
-    suspend fun getCount(): Int
+    suspend fun getCount(): Int = memories.value.size
 
-    @Query("SELECT COUNT(*) FROM memories WHERE category = :category")
-    suspend fun getCountByCategory(category: String): Int
+    suspend fun getCountByCategory(category: String): Int =
+        memories.value.count { it.category == category }
 
-    @Query("DELETE FROM memories")
-    suspend fun deleteAll()
+    suspend fun deleteAll() { memories.value.clear() }
 }
 
-@Database(
-    entities = [MemoryItem::class],
-    version = DATABASE_VERSION,
-    exportSchema = false
-)
-abstract class AppDatabase : RoomDatabase() {
+abstract class AppDatabase {
     abstract fun memoryDao(): MemoryDao
-
     companion object {
         const val DATABASE_VERSION = 1
-
-        val MIGRATIONS = listOf<Migration>(
-        )
-    }
-}
-
-@Module
-@InstallIn(SingletonComponent::class)
-object DatabaseModule {
-
-    @Provides
-    @Singleton
-    fun provideMemoryDao(database: AppDatabase): MemoryDao {
-        return database.memoryDao()
     }
 }

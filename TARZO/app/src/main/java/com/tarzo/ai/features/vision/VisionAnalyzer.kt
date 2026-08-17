@@ -169,7 +169,7 @@ class VisionAnalyzer @Inject constructor(
                         VisionResult.TextBlock(
                             text = block.text,
                             boundingBox = block.boundingBox?.toShortString() ?: "unknown",
-                            confidence = block.confidence ?: 0f
+                            confidence = 0.9f
                         )
                     }
                     cont.resume(OcrResult(

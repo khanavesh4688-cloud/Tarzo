@@ -56,8 +56,8 @@ class WakeWordEngine @Inject constructor(
     private var energyThreshold = 1500.0
     private val silenceTimeoutMs = 500L
     private var lastVoiceActivityMs = 0L
-    private val ringBuffer = ArrayDeque<Float>(ringBufferSize)
     private val ringBufferSize = sampleRate / 2
+    private val ringBuffer = ArrayDeque<Float>(ringBufferSize)
     private val candidateBuffer = StringBuilder()
     private var candidateStartTimeMs = 0L
     private val candidateTimeoutMs = 2500L

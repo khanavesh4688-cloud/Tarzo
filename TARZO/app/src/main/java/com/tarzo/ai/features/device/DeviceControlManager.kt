@@ -329,7 +329,7 @@ class DeviceControlManager @Inject constructor(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !enable) {
                 // Android 10+ doesn't allow direct disable for non-system apps.
                 // Fall back to opening Bluetooth settings.
-                val panelIntent = Intent(Settings.Panel.ACTION_BLUETOOTH).apply {
+                val panelIntent = Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
                 context.startActivity(panelIntent)

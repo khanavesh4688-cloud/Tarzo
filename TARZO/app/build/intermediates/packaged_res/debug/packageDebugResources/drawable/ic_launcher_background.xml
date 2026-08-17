@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    TARZO Launcher Icon Background
+    Simple dark solid color matching tarzo_dark.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/tarzo_dark" />
+</shape>

@@ -12,6 +12,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.core.content.ContextCompat
+import javax.inject.Inject
 
 data class PermissionGroup(
     val name: String,
@@ -20,7 +21,9 @@ data class PermissionGroup(
     val required: Boolean = true
 )
 
-class PermissionManager(private val context: Context) {
+class PermissionManager @Inject constructor(
+    private val context: Context
+) {
 
     val requiredPermissionGroups: List<PermissionGroup> = listOf(
         PermissionGroup(

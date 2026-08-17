@@ -250,4 +250,5 @@
     <string name="toast_permission_denied">Permission deny ho gayi. Settings se manually dein.</string>
     <string name="toast_settings_reset">Settings reset ho gaye</string>
     <string name="splash_subtitle">Initializing TARZO AI…</string>
+    <string name="accessibility_service_description">TARZO Screen Automation - Allows TARZO to read screen content and perform automated actions like scrolling and clicking for voice commands.</string>
 </resources>

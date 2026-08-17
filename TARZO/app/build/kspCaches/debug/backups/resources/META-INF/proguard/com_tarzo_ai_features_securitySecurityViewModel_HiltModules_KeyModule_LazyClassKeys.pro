@@ -1,0 +1,2 @@
+-keep,allowobfuscation,allowshrinking class com.tarzo.ai.features.security.SecurityViewModel
+-keep,allowobfuscation,allowshrinking class com.tarzo.ai.features.security.SecurityViewModel

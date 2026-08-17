@@ -205,7 +205,7 @@ class AntiTheftService : Service(), SensorEventListener {
                 val t = i.toDouble() / sampleRate
                 val cycle = (i % (freqSwitchInterval * 2)).toDouble()
                 val freq = if (cycle < freqSwitchInterval) freq1 else freq2
-                val sample = (Math.sin(2.0 * Math.PI * freq * t) * Short.MAX_VALUE * 0.8).toShort()
+                val sample = (Math.sin(2.0 * Math.PI * freq * t) * Short.MAX_VALUE * 0.8).toInt().toShort()
                 samples[i] = sample
             }
 
@@ -234,9 +234,7 @@ class AntiTheftService : Service(), SensorEventListener {
                     16, 0 // block align
                 )
                 fos.write(header)
-                fos.write(
-                    'd'.code.toByte(), 'a'.code.toByte(), 't'.code.toByte(), 'a'.code.toByte()
-                )
+                fos.write(byteArrayOf('d'.code.toByte(), 'a'.code.toByte(), 't'.code.toByte(), 'a'.code.toByte()))
                 val dataLengthBytes = byteArrayOf(
                     (dataLength and 0xFF).toByte(),
                     ((dataLength shr 8) and 0xFF).toByte(),
@@ -293,7 +291,7 @@ class AntiTheftService : Service(), SensorEventListener {
         vibrator?.let { vib ->
             if (vib.hasVibrator()) {
                 val pattern = longArrayOf(0, 500, 200, 500, 200, 500, 200, 500)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     vib.vibrate(
                         VibrationEffect.createWaveform(pattern, 0),
                         android.os.VibrationAttributes.Builder()

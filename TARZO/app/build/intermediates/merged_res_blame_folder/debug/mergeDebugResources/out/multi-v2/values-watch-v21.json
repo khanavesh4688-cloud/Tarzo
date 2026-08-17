@@ -1,0 +1,20 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.tarzo.ai.app-mergeDebugResources-87:/values-watch-v21/values-watch-v21.xml",
+            "map": [
+                {
+                    "source": "/home/z/.gradle/caches/8.11.1/transforms/32cfab8bf5be64d1048169f81db14cd9/transformed/appcompat-1.7.0/res/values-watch-v21/values-watch-v21.xml",
+                    "from": {
+                        "startLines": "2,6,10",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "55,271,499",
+                        "endLines": "5,9,13",
+                        "endColumns": "12,12,12",
+                        "endOffsets": "266,494,724"
+                    }
+                }
+            ]
+        }
+    ]
+}

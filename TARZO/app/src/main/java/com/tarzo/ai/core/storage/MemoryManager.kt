@@ -64,9 +64,10 @@ class MemoryManager @Inject constructor(
         }
     }
 
-    suspend fun forgetByContent(keyword: String): Int {
-        return withContext(Dispatchers.IO) {
-            memoryDao.deleteByContent(keyword)
+    suspend fun forgetByContent(keyword: String) {
+        withContext(Dispatchers.IO) {
+            val items = memoryDao.searchByContent(keyword)
+            items.collect { list -> list.forEach { memoryDao.delete(it) } }
         }
     }
 

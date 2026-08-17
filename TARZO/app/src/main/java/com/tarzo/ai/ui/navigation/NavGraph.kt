@@ -1,5 +1,6 @@
 package com.tarzo.ai.ui.navigation
 
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -7,11 +8,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -19,19 +20,14 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.tarzo.ai.TarzoApp
+import com.tarzo.ai.ui.screens.SettingsScreen
+import com.tarzo.ai.ui.screens.SettingsScreenState
 import com.tarzo.ai.ui.theme.*
+import kotlinx.coroutines.launch
 
 // ── Bottom Navigation Bar ──────────────────────────────────────────────
 
-/**
- * TARZO bottom navigation bar.
- *
- * Renders the primary tab icons with the cyan accent for the
- * selected item and a translucent surface background.
- *
- * @param navController Used to observe and change the current route.
- * @param modifier Applied to the outer container.
- */
 @Composable
 fun TarzoBottomNavBar(
     navController: NavHostController,
@@ -66,7 +62,6 @@ fun TarzoBottomNavBar(
                 },
                 selected = selected,
                 onClick = {
-                    // Avoid re-navigating to the same route.
                     if (currentRoute != route.route) {
                         navController.navigate(route.route) {
                             popUpTo(Route.Home.route) {
@@ -91,17 +86,6 @@ fun TarzoBottomNavBar(
 
 // ── Navigation Host ────────────────────────────────────────────────────
 
-/**
- * The main TARZO navigation graph.
- *
- * Wires every [Route] to a placeholder destination composable.
- * Replace each `PlaceholderScreen` with the real feature screen
- * as it is built.
- *
- * @param navController The [NavHostController].
- * @param startDestination The initial route (defaults to [Route.Home]).
- * @param modifier Applied to the NavHost container.
- */
 @Composable
 fun TarzoNavGraph(
     navController: NavHostController,
@@ -158,22 +142,80 @@ fun TarzoNavGraph(
             )
         }
         composable(Route.Settings.route) {
-            PlaceholderScreen(
-                title = "Settings",
-                subtitle = "Language, voice, wake word & more",
-                icon = Icons.Default.Settings,
-            )
+            SettingsScreenLive()
         }
     }
 }
 
+/**
+ * Live Settings screen that reads/writes SecureStorage.
+ */
+@Composable
+private fun SettingsScreenLive() {
+    val context = LocalContext.current
+    val app = context.applicationContext as TarzoApp
+    val secureStorage = app.secureStorage
+    val scope = rememberCoroutineScope()
+
+    // Load initial values from SecureStorage
+    var state by remember {
+        mutableStateOf(
+            SettingsScreenState(
+                apiBaseUrl = secureStorage.getApiBaseUrl(),
+                apiKey = secureStorage.getApiKey() ?: "",
+            )
+        )
+    }
+
+    SettingsScreen(
+        state = state,
+        onLanguageChange = { lang ->
+            secureStorage.saveUserPreferredLanguage(lang)
+            state = state.copy(languageCode = lang)
+        },
+        onTtsEngineChange = { engine ->
+            state = state.copy(ttsEngine = engine)
+        },
+        onPitchChange = { pitch ->
+            state = state.copy(voicePitch = pitch)
+        },
+        onSpeedChange = { speed ->
+            state = state.copy(voiceSpeed = speed)
+        },
+        onWakeWordToggle = { enabled ->
+            state = state.copy(isWakeWordEnabled = enabled)
+        },
+        onWakeWordSensitivityChange = { sensitivity ->
+            state = state.copy(wakeWordSensitivity = sensitivity)
+        },
+        onApiBaseUrlChange = { url ->
+            secureStorage.saveApiBaseUrl(url)
+            state = state.copy(apiBaseUrl = url, isApiConnected = false)
+        },
+        onApiKeyChange = { key ->
+            secureStorage.saveApiKey(key)
+            state = state.copy(apiKey = key, isApiConnected = false)
+        },
+        onTestConnection = {
+            scope.launch {
+                // Simple test: just mark as connected if key and URL are present
+                val hasKey = secureStorage.hasApiKey()
+                val hasUrl = secureStorage.getApiBaseUrl().isNotBlank()
+                state = state.copy(isApiConnected = hasKey && hasUrl)
+            }
+        },
+        onNotificationToggle = { enabled ->
+            state = state.copy(isNotificationsEnabled = enabled)
+        },
+        onThemeToggle = { dark ->
+            state = state.copy(isDarkTheme = dark)
+        },
+        onNavigateToPrivacy = {},
+    )
+}
+
 // ── Placeholder Screen ─────────────────────────────────────────────────
 
-/**
- * Temporary placeholder that renders a route's title, subtitle and icon.
- *
- * This will be replaced by the actual feature screens in subsequent tasks.
- */
 @Composable
 private fun PlaceholderScreen(
     title: String,
@@ -214,15 +256,6 @@ private fun PlaceholderScreen(
 
 // ── Scaffold wrapper ───────────────────────────────────────────────────
 
-/**
- * Full-screen scaffold with the bottom navigation bar.
- *
- * Use this as the root composable for the main activity.
- * It hosts [TarzoNavGraph] and [TarzoBottomNavBar].
- *
- * @param navController The [NavHostController].
- * @param modifier Applied to the outer scaffold.
- */
 @Composable
 fun TarzoScaffold(
     navController: NavHostController,

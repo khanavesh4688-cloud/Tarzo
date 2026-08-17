@@ -58,7 +58,7 @@ class ChargerReceiver : BroadcastReceiver() {
         scope.launch {
             try {
                 val prefs = TarzoApp.instance.dataStore.data.first()
-                val antiTheftEnabled = prefs[TarzoApp.KEY_ANTI_THEFT_ENABLED]?.toBoolean() ?: false
+                val antiTheftEnabled = prefs["TarzoApp.KEY_ANTI_THEFT_ENABLED"]?.toBoolean() ?: false
                 val wasCharging = prefs[KEY_WAS_CHARGING]?.toBoolean() ?: false
 
                 if (antiTheftEnabled && wasCharging) {

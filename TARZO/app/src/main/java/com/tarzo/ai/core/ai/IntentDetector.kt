@@ -100,7 +100,7 @@ class IntentDetector @Inject constructor() {
 
     private fun normalize(text: String): String {
         return text.lowercase()
-            .replace(Regex("[\\s]+"), " ")
+            .replace(Regex("[s]+"), " ")
             .trim()
             .replace("ऊ", "ू")
             .replace("ँ", "ं")
@@ -425,17 +425,17 @@ class IntentDetector @Inject constructor() {
     private class ContactExtractor : ParamExtractor {
         override fun extract(text: String, normalized: String): Pair<String, Any>? {
             val patterns = listOf(
-                Regex("(?:ko|ke|se|ka|ki|ke liye)\s+(.+?)$", RegexOption.IGNORE_CASE),
-                Regex("(?:to|for)\s+(.+?)$", RegexOption.IGNORE_CASE),
-                Regex("(?:call|phone|dial|ring|sms|message|whatsapp)\s+(.+?)$", RegexOption.IGNORE_CASE)
+                Regex("(?:ko|ke|se|ka|ki|ke liye)+(.+?)$", RegexOption.IGNORE_CASE),
+                Regex("(?:to|for)+(.+?)$", RegexOption.IGNORE_CASE),
+                Regex("(?:call|phone|dial|ring|sms|message|whatsapp)+(.+?)$", RegexOption.IGNORE_CASE)
             )
             for (pattern in patterns) {
                 val match = pattern.find(normalized)
                 if (match != null) {
                     val name = match.groupValues[1].trim()
-                        .replace(Regex("\b(bhejo|karo|lagao|pe|par|mein|se|ko|ka|ki)\b"), "")
+                        .replace(Regex("(bhejo|karo|lagao|pe|par|mein|se|ko|ka|ki)"), "")
                         .trim()
-                    if (name.length in 2..30 && !name.contains(Regex("\\d{4,}"))) {
+                    if (name.length in 2..30 && !name.contains(Regex("d{4,}"))) {
                         return "contact" to name
                     }
                 }
@@ -446,13 +446,13 @@ class IntentDetector @Inject constructor() {
 
     private class PhoneExtractor : ParamExtractor {
         override fun extract(text: String, normalized: String): Pair<String, Any>? {
-            val phoneMatch = Regex("\\b\\d{10}\\b").find(text)
+            val phoneMatch = Regex("bd{10}b").find(text)
             if (phoneMatch != null) {
                 return "phone" to phoneMatch.value
             }
-            val phoneMatch2 = Regex("\\b\\+?[91]{0,2}[\\s-]?\\d{5}[\\s-]?\\d{5}\\b").find(text)
+            val phoneMatch2 = Regex("b+?[91]{0,2}[s-]?d{5}[s-]?d{5}b").find(text)
             if (phoneMatch2 != null) {
-                return "phone" to phoneMatch2.value.replace(Regex("[^\\d]"), "")
+                return "phone" to phoneMatch2.value.replace(Regex("[^d]"), "")
             }
             return null
         }
@@ -485,7 +485,7 @@ class IntentDetector @Inject constructor() {
                     return "app" to value
                 }
             }
-            val openMatch = Regex("(?:open|launch|start|kholo|chalu)\s+(.+?)$", RegexOption.IGNORE_CASE)
+            val openMatch = Regex("(?:open|launch|start|kholo|chalu)+(.+?)$", RegexOption.IGNORE_CASE)
             val match = openMatch.find(normalized)
             if (match != null) {
                 val appName = match.groupValues[1].trim()
@@ -547,9 +547,9 @@ class IntentDetector @Inject constructor() {
     private class MessageExtractor : ParamExtractor {
         override fun extract(text: String, normalized: String): Pair<String, Any>? {
             val patterns = listOf(
-                Regex("(?:message|sms|text)\s+(?:karo|bhej|send)\s+[^"]*?(?:ki|that|saying|message)\s+[\"'](.+?)[\"']"),
-                Regex("(?:message|sms|text)\s+(?:karo|bhej|send)\s+[^"]*?\s+(?:ki|that|saying|message)\s+(.+?)$", RegexOption.IGNORE_CASE),
-                Regex("(?:bhej|send)\s+[^"]*?[\"'](.+?)[\"']")
+                Regex("""(?:message|sms|text)+(?:karo|bhej|send)+[^]*?(?:ki|that|saying|message)+[](.+?)[]"""),
+                Regex("""(?:message|sms|text)+(?:karo|bhej|send)+[^]*?+(?:ki|that|saying|message)+(.+?)$""", RegexOption.IGNORE_CASE),
+                Regex("""(?:bhej|send)+[^]*?[](.+?)[]""")
             )
             for (pattern in patterns) {
                 val match = pattern.find(text)
@@ -560,10 +560,10 @@ class IntentDetector @Inject constructor() {
                     }
                 }
             }
-            val kiMatch = Regex("(?:ki|that)\s+(.+?)$", RegexOption.IGNORE_CASE).find(normalized)
+            val kiMatch = Regex("(?:ki|that)+(.+?)$", RegexOption.IGNORE_CASE).find(normalized)
             if (kiMatch != null) {
                 val msg = kiMatch.groupValues[1].trim()
-                if (msg.length in 2..200 && !msg.contains(Regex("\\d{10}"))) {
+                if (msg.length in 2..200 && !msg.contains(Regex("d{10}"))) {
                     return "message" to msg
                 }
             }

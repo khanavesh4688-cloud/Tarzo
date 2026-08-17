@@ -1,0 +1,7 @@
+-keep,allowobfuscation,allowshrinking class com.tarzo.ai.features.security.SecurityViewModel
+-keep,allowobfuscation,allowshrinking class com.tarzo.ai.features.security.SecurityViewModel
+-keep,allowobfuscation,allowshrinking class com.tarzo.ai.features.reminders.ReminderViewModel
+-keep,allowobfuscation,allowshrinking class com.tarzo.ai.features.reminders.ReminderViewModel
+-keep,allowobfuscation,allowshrinking class com.tarzo.ai.features.camera.CameraViewModel
+-keep,allowobfuscation,allowshrinking class com.tarzo.ai.features.camera.CameraViewModel
+-keep,allowobfuscation,allowshrinking class com.tarzo.ai.features.device.DeviceControlViewModel

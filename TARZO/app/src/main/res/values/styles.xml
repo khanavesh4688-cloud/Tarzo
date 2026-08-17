@@ -1,104 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- ======================================== -->
-    <!-- TARZO Custom Styles                       -->
-    <!-- ======================================== -->
+    <!-- TARZO Custom Styles (minimal XML, app uses Compose for UI) -->
 
-    <!-- Card style with dark surface -->
-    <style name="TarzoCard" parent="Widget.Material3.CardView.Elevated">
-        <item name="cardBackgroundColor">@color/tarzo_card</item>
-        <item name="cardCornerRadius">16dp</item>
-        <item name="cardElevation">0dp</item>
-        <item name="strokeColor">@color/tarzo_divider</item>
-        <item name="strokeWidth">1dp</item>
-    </style>
-
-    <!-- Filled card with accent border -->
-    <style name="TarzoCard.Accented" parent="TarzoCard">
-        <item name="strokeColor">@color/tarzo_accent_20</item>
-        <item name="strokeWidth">1.5dp</item>
-    </style>
-
-    <!-- Text appearance: Section heading -->
-    <style name="TarzoTextSectionHeading" parent="TextAppearance.Material3.TitleMedium">
+    <style name="TarzoTextSectionHeading" parent="android:TextAppearance.Medium">
         <item name="android:textColor">@color/tarzo_text_primary</item>
         <item name="android:textSize">16sp</item>
-        <item name="android:letterSpacing">0.01</item>
     </style>
 
-    <!-- Text appearance: Body -->
-    <style name="TarzoTextBody" parent="TextAppearance.Material3.BodyMedium">
+    <style name="TarzoTextBody" parent="android:TextAppearance">
         <item name="android:textColor">@color/tarzo_text_secondary</item>
     </style>
 
-    <!-- Text appearance: Label / Caption -->
-    <style name="TarzoTextCaption" parent="TextAppearance.Material3.LabelSmall">
+    <style name="TarzoTextCaption" parent="android:TextAppearance.Small">
         <item name="android:textColor">@color/tarzo_text_secondary</item>
-        <item name="android:alpha">0.7</item>
-    </style>
-
-    <!-- Button: Primary (cyan accent) -->
-    <style name="TarzoButtonPrimary" parent="Widget.Material3.Button">
-        <item name="backgroundTint">@color/tarzo_accent</item>
-        <item name="android:textColor">@android:color/black</item>
-        <item name="cornerRadius">12dp</item>
-        <item name="android:textAllCaps">false</item>
-    </style>
-
-    <!-- Button: Secondary (outlined) -->
-    <style name="TarzoButtonSecondary" parent="Widget.Material3.Button.OutlinedButton">
-        <item name="strokeColor">@color/tarzo_accent</item>
-        <item name="android:textColor">@color/tarzo_accent</item>
-        <item name="cornerRadius">12dp</item>
-        <item name="android:textAllCaps">false</item>
-    </style>
-
-    <!-- Switch style -->
-    <style name="TarzoSwitch" parent="Widget.Material3.Switch">
-        <item name="thumbTint">@color/tarzo_accent</item>
-        <item name="trackTint">@color/tarzo_accent_20</item>
-    </style>
-
-    <!-- Slider / SeekBar -->
-    <style name="TarzoSlider" parent="Widget.Material3.Slider">
-        <item name="thumbColor">@color/tarzo_accent</item>
-        <item name="trackColorActive">@color/tarzo_accent</item>
-        <item name="trackColorInactive">@color/tarzo_divider</item>
-    </style>
-
-    <!-- Dialog style -->
-    <style name="TarzoDialog" parent="ThemeOverlay.Material3.Dialog">
-        <item name="android:windowBackground">@color/tarzo_surface</item>
-        <item name="colorSurface">@color/tarzo_surface</item>
-        <item name="colorOnSurface">@color/tarzo_text_primary</item>
-    </style>
-
-    <!-- Bottom sheet style -->
-    <style name="TarzoBottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
-        <item name="android:windowBackground">@android:color/transparent</item>
-        <item name="bottomSheetStyle">@style/TarzoBottomSheetStyle</item>
-    </style>
-
-    <style name="TarzoBottomSheetStyle" parent="Widget.Design.BottomSheet.Modal">
-        <item name="android:background">@color/tarzo_surface</item>
-        <item name="shapeAppearanceOverlay">@style/TarzoBottomSheetShape</item>
-    </style>
-
-    <style name="TarzoBottomSheetShape" parent="">
-        <item name="cornerFamily">rounded</item>
-        <item name="cornerSizeTopLeft">24dp</item>
-        <item name="cornerSizeTopRight">24dp</item>
-        <item name="cornerSizeBottomLeft">0dp</item>
-        <item name="cornerSizeBottomRight">0dp</item>
-    </style>
-
-    <!-- Permission status chip -->
-    <style name="TarzoPermissionChip" parent="Widget.Material3.InputChip">
-        <item name="chipBackgroundColor">@color/tarzo_card</item>
-        <item name="chipStrokeColor">@color/tarzo_divider</item>
-        <item name="android:textColor">@color/tarzo_text_secondary</item>
-        <item name="chipIconTint">@color/tarzo_accent</item>
     </style>
 
 </resources>

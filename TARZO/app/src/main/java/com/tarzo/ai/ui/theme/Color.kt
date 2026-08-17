@@ -1,6 +1,8 @@
 package com.tarzo.ai.ui.theme
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 
 // ── Primary Palette ──────────────────────────────────────────────────────
 
@@ -58,20 +60,17 @@ val TarzoYellow = Color(0xFFEAB308)
 
 // ── Surface overlays ─────────────────────────────────────────────────────
 
-val TarzoSurfaceOverlay = Color(0x0AFFFFFF)   // very subtle white tint
-val TarzoScrim = Color(0x80000000)           // dimming scrim
-val TarzoDivider = Color(0x1FFFFFFF)         // hairline dividers
+val TarzoSurfaceOverlay = Color(0x0AFFFFFF)
+val TarzoScrim = Color(0x80000000)
+val TarzoDivider = Color(0x1FFFFFFF)
 
 // ── Bottom nav / chrome ──────────────────────────────────────────────────
 
-val TarzoNavBackground = Color(0xB3111827)   // surface @ 70 %
+val TarzoNavBackground = Color(0xB3111827)
 val TarzoNavSelected = TarzoAccent
 val TarzoNavUnselected = Color(0xFF64748B)
 
 // ── Material3 Color Schemes ─────────────────────────────────────────────
-
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 
 val TarzoDarkColorScheme = darkColorScheme(
     primary = TarzoAccent,

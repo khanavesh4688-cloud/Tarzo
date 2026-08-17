@@ -324,10 +324,12 @@ class VoiceAssistantService : Service() {
         serviceScope.launch {
             try {
                 val prefs = TarzoApp.instance.dataStore.data.first()
-                currentLanguage = prefs[TarzoApp.KEY_ACTIVE_LANGUAGE] ?: Constants.DEFAULT_LANGUAGE
-                wakeWordEnabled = prefs[TarzoApp.KEY_WAKE_WORD_ENABLED]?.toBoolean() ?: true
-                val speed = prefs[TarzoApp.KEY_TTS_SPEED]?.toFloatOrNull() ?: Constants.DEFAULT_TTS_SPEED
-                val pitch = prefs[TarzoApp.KEY_VOICE_PITCH]?.toFloatOrNull() ?: Constants.DEFAULT_VOICE_PITCH
+                currentLanguage = prefs[Tarzo.KEY_ACTIVE_LANGUAGE"] ?: Constants.DEFAULT_LANGUAGE
+                wakeWordEnabled = prefs[Tarzo.KEY_WAKE_WORD_ENABLED"]?.toBoolean() ?: true
+                val speed = prefs[Tarzo.KEY_TTS_SPEED]
+                        ?.toFloatOrNull() ?: Constants.DEFAULT_TTS_SPEED
+                val pitch = prefs[TarzoApp.KEY_VOICE_PITCH]
+                        ?.toFloatOrNull() ?: Constants.DEFAULT_VOICE_PITCH
                 ttsManager.setSpeechRate(speed)
                 ttsManager.setPitch(pitch)
             } catch (e: Exception) {
@@ -633,10 +635,10 @@ class CommandProcessor @javax.inject.Inject constructor(
 
     private fun parseTimerDuration(query: String): Int {
         val minutePatterns = listOf(
-            Regex("(\\d+)\\s*minute"),
-            Regex("(\\d+)\s*min"),
-            Regex("(\\d+)\s*मिनट"),
-            Regex("(\\d+)\s*minat")
+            Regex("(d+)s*minute"),
+            Regex("(d+)*min"),
+            Regex("(d+)*मिनट"),
+            Regex("(d+)*minat")
         )
         for (pattern in minutePatterns) {
             val match = pattern.find(query.lowercase())
@@ -645,8 +647,8 @@ class CommandProcessor @javax.inject.Inject constructor(
             }
         }
         val secondPatterns = listOf(
-            Regex("(\\d+)\s*second"),
-            Regex("(\\d+)\s*sec")
+            Regex("(d+)*second"),
+            Regex("(d+)*sec")
         )
         for (pattern in secondPatterns) {
             val match = pattern.find(query.lowercase())

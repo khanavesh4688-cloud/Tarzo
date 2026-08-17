@@ -66,7 +66,7 @@ class SpeechRecognitionManager @Inject constructor(
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE, currentLanguage)
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, currentLanguage)
-                putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_DEFAULT_LANGUAGE, true)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, true)
                 putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
@@ -232,7 +232,7 @@ class SpeechRecognitionManager @Inject constructor(
             Locale("en", "US"),
             Locale("hi"),
             Locale.ENGLISH,
-            Locale.HINDI
+            Locale.forLanguageTag("hi")
         ).distinctBy { it.toLanguageTag() }
     }
 

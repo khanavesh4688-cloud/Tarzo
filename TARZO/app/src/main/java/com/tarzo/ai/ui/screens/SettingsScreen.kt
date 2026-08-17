@@ -17,6 +17,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.tarzo.ai.ui.theme.*
@@ -32,6 +34,7 @@ data class SettingsScreenState(
     val isWakeWordEnabled: Boolean = false,
     val wakeWordSensitivity: Float = 0.65f,
     val apiBaseUrl: String = "",
+    val apiKey: String = "",
     val isApiConnected: Boolean = false,
     val isNotificationsEnabled: Boolean = true,
     val isDarkTheme: Boolean = true,
@@ -76,6 +79,7 @@ fun SettingsScreen(
     onWakeWordToggle: (Boolean) -> Unit = {},
     onWakeWordSensitivityChange: (Float) -> Unit = {},
     onApiBaseUrlChange: (String) -> Unit = {},
+    onApiKeyChange: (String) -> Unit = {},
     onTestConnection: () -> Unit = {},
     onNotificationToggle: (Boolean) -> Unit = {},
     onThemeToggle: (Boolean) -> Unit = {},
@@ -234,6 +238,37 @@ fun SettingsScreen(
             colors = CardDefaults.cardColors(containerColor = TarzoCard),
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // API Key input with password toggle
+                var apiKeyVisible by remember { mutableStateOf(false) }
+                OutlinedTextField(
+                    value = state.apiKey,
+                    onValueChange = onApiKeyChange,
+                    label = { Text("API Key") },
+                    placeholder = { Text("Enter your API key", color = TarzoTextSecondary.copy(alpha = 0.4f)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp),
+                    visualTransformation = if (apiKeyVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { apiKeyVisible = !apiKeyVisible }) {
+                            Icon(
+                                imageVector = if (apiKeyVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (apiKeyVisible) "Hide API Key" else "Show API Key",
+                                tint = TarzoTextSecondary,
+                            )
+                        }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = TarzoTextPrimary,
+                        unfocusedTextColor = TarzoTextPrimary,
+                        cursorColor = TarzoAccent,
+                        focusedBorderColor = TarzoAccent,
+                        unfocusedBorderColor = TarzoDivider,
+                        focusedContainerColor = TarzoSurface,
+                        unfocusedContainerColor = TarzoSurface,
+                    ),
+                )
+                HorizontalDivider(color = TarzoDivider)
                 OutlinedTextField(
                     value = state.apiBaseUrl,
                     onValueChange = onApiBaseUrlChange,

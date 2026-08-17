@@ -131,13 +131,45 @@ class SecureStorage @Inject constructor(
         return getString(KEY_CUSTOM_ENDPOINT_PREFIX + path)
     }
 
+    // ── API Key (user-provided, encrypted on device) ──────────
+
+    fun saveApiKey(key: String) {
+        putString(KEY_API_KEY, key.trim())
+    }
+
+    fun getApiKey(): String? {
+        return getString(KEY_API_KEY, null)
+    }
+
+    fun hasApiKey(): Boolean {
+        return !getApiKey().isNullOrBlank()
+    }
+
+    fun clearApiKey() {
+        remove(KEY_API_KEY)
+    }
+
+    /**
+     * On first launch, seeds the default API key so the app
+     * works out of the box. Users can override it in Settings.
+     */
+    fun seedDefaultApiKeyIfNeeded() {
+        if (!contains(KEY_DEFAULT_KEY_SEEDED)) {
+            putString(KEY_API_KEY, DEFAULT_API_KEY)
+            putBoolean(KEY_DEFAULT_KEY_SEEDED, true)
+        }
+    }
+
     companion object {
         private const val SECURE_PREFS_NAME = "tarzo_secure_prefs"
         private const val KEY_API_BASE_URL = "api_base_url"
+        private const val KEY_API_KEY = "user_api_key"
         private const val KEY_ANTI_THEFT_PIN = "anti_theft_pin"
         private const val KEY_ANTI_THEFT_ENABLED = "anti_theft_enabled"
         private const val KEY_PREFERRED_LANGUAGE = "preferred_language"
         private const val KEY_CUSTOM_ENDPOINT_PREFIX = "custom_endpoint_"
+        private const val KEY_DEFAULT_KEY_SEEDED = "default_key_seeded"
         private const val DEFAULT_API_BASE_URL = ""
+        internal const val DEFAULT_API_KEY = "vck_5yC8mbbPmVfKXF06QvmuXG5zGOYjFm6siYTLIIu9WpddUI4eK90kHrGU"
     }
 }

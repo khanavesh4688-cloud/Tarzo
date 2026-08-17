@@ -1,56 +1,85 @@
 package com.tarzo.ai.core.ai
 
+import android.util.Log
+import com.tarzo.ai.core.storage.SecureStorage
 import com.tarzo.ai.util.Constants.IntentType
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/*
- * ──────────────────────────────────────────────────────────────
- *  HOW TO PLUG IN A REAL LLM (OpenAI / Gemini) BACKEND:
- * ──────────────────────────────────────────────────────────────
- *
- *  1. Set up a backend server (Node.js / Python Flask / FastAPI)
- *     that holds your API key securely (NEVER embed API keys in
- *     the Android APK).
- *
- *  2. Define an endpoint, e.g. POST /api/v1/chat
- *     Body: { "query": "...", "intent": "FLASHLIGHT_ON", "lang": "hi-IN" }
- *
- *  3. In this LLMClient, replace generateResponse() with an
- *     OkHttp / Retrofit call to your backend.
- *
- *  Example (Retrofit):
- *  ─────────────────────
- *  @POST("/api/v1/chat")
- *  suspend fun chat(@Body req: ChatRequest): ChatResponse
- *
- *  // In generateResponse():
- *  val resp = api.chat(ChatRequest(query, intent.intent.name, lang))
- *  return resp.reply
- *
- *  4. For OpenAI:
- *     Backend sends: { model: "gpt-4o-mini", messages: [...] }
- *     to https://api.openai.com/v1/chat/completions
- *
- *  5. For Gemini:
- *     Backend sends to:
- *     https://generativelanguage.googleapis.com/v1beta/models/
- *     gemini-2.0-flash:generateContent?key=YOUR_KEY
- *
- *  The default implementation below works fully offline with
- *  pre-built Hinglish rule-based responses.
- * ──────────────────────────────────────────────────────────────
- */
+// ── OpenAI-compatible Chat API data classes ─────────────────────
+
+data class ChatMessage(
+    val role: String,
+    val content: String
+)
+
+data class ChatRequest(
+    val model: String = "gpt-4o-mini",
+    val messages: List<ChatMessage>,
+    val temperature: Float = 0.7f,
+    val max_tokens: Int = 512
+)
+
+data class ChatChoice(
+    val index: Int = 0,
+    val message: ChatMessage,
+    @SerializedName("finish_reason")
+    val finishReason: String = "stop"
+)
+
+data class ChatResponse(
+    val id: String = "",
+    val choices: List<ChatChoice> = emptyList(),
+    @SerializedName("usage")
+    val usage: Usage? = null
+)
+
+data class Usage(
+    @SerializedName("prompt_tokens")
+    val promptTokens: Int = 0,
+    @SerializedName("completion_tokens")
+    val completionTokens: Int = 0,
+    @SerializedName("total_tokens")
+    val totalTokens: Int = 0
+)
 
 /**
  * Generates natural-language responses for detected intents.
- * Default implementation is rule-based and works offline.
- * Can be swapped with an LLM API backend.
+ * When an API key and base URL are configured, makes real LLM calls
+ * via OpenAI-compatible chat completions endpoint.
+ * Falls back to offline rule-based responses otherwise.
  */
 @Singleton
-class LLMClient @Inject constructor() {
+class LLMClient @Inject constructor(
+    private val secureStorage: SecureStorage
+) {
+    private val gson = Gson()
 
+    private val httpClient: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .build()
+    }
+
+    // Conversation history for multi-turn context (last N messages)
+    private val conversationHistory = mutableListOf<ChatMessage>()
+    private val MAX_HISTORY = 10
+
+    /**
+ * Synchronous (offline) response generation. Used as fallback.
+     */
     fun generateResponse(
         query: String,
         intentResult: IntentResult,
@@ -59,6 +88,130 @@ class LLMClient @Inject constructor() {
         val responseKey = ResponseKey(intentResult.intent, language)
         return responseMap[responseKey]
             ?: generateDynamicResponse(query, intentResult, language)
+    }
+
+    /**
+     * Coroutine-based response generation.
+     * Tries the LLM API first; falls back to offline rules on failure.
+     */
+    suspend fun generateResponseAsync(
+        query: String,
+        intentResult: IntentResult,
+        language: String = "hi-IN"
+    ): String {
+        val apiKey = secureStorage.getApiKey()
+        val baseUrl = secureStorage.getApiBaseUrl()
+
+        if (apiKey.isNullOrBlank() || baseUrl.isBlank()) {
+            Log.d(TAG, "API not configured, using offline responses")
+            return generateResponse(query, intentResult, language)
+        }
+
+        return withContext(Dispatchers.IO) {
+            try {
+                callLlmApi(query, intentResult, language, apiKey, baseUrl)
+            } catch (e: Exception) {
+                Log.e(TAG, "LLM API call failed: ${e.message}, falling back to offline", e)
+                generateResponse(query, intentResult, language)
+            }
+        }
+    }
+
+    private fun callLlmApi(
+        query: String,
+        intentResult: IntentResult,
+        language: String,
+        apiKey: String,
+        baseUrl: String
+    ): String {
+        // Build system prompt
+        val systemPrompt = buildSystemPrompt(intentResult, language)
+
+        // Add user message to history
+        conversationHistory.add(ChatMessage(role = "user", content = query))
+        if (conversationHistory.size > MAX_HISTORY) {
+            conversationHistory.removeAt(0)
+        }
+
+        // Build messages list
+        val messages = mutableListOf<ChatMessage>()
+        messages.add(ChatMessage(role = "system", content = systemPrompt))
+        messages.addAll(conversationHistory)
+
+        val request = ChatRequest(messages = messages)
+        val jsonBody = gson.toJson(request)
+
+        val cleanBase = baseUrl.trimEnd('/')
+        val endpoint = "${cleanBase}/v1/chat/completions"
+
+        Log.d(TAG, "Calling LLM API: $endpoint")
+
+        val httpRequest = Request.Builder()
+            .url(endpoint)
+            .addHeader("Authorization", "Bearer $apiKey")
+            .addHeader("Content-Type", "application/json")
+            .addHeader("Accept", "application/json")
+            .post(jsonBody.toRequestBody(JSON_MEDIA_TYPE))
+            .build()
+
+        val response = httpClient.newCall(httpRequest).execute()
+        val responseBody = response.body?.string()
+
+        if (!response.isSuccessful) {
+            Log.e(TAG, "LLM API error ${response.code}: $responseBody")
+            throw RuntimeException("API returned ${response.code}")
+        }
+
+        if (responseBody.isNullOrBlank()) {
+            throw RuntimeException("Empty response from API")
+        }
+
+        val chatResponse = gson.fromJson(responseBody, ChatResponse::class.java)
+        val reply = chatResponse.choices.firstOrNull()?.message?.content
+
+        if (reply.isNullOrBlank()) {
+            throw RuntimeException("No reply in API response")
+        }
+
+        // Add assistant reply to history
+        conversationHistory.add(ChatMessage(role = "assistant", content = reply))
+        if (conversationHistory.size > MAX_HISTORY) {
+            conversationHistory.removeAt(0)
+        }
+
+        return reply.trim()
+    }
+
+    private fun buildSystemPrompt(intentResult: IntentResult, language: String): String {
+        val isHindi = language.startsWith("hi")
+        val intentName = intentResult.intent.name
+
+        return if (isHindi) {
+            """Tum TARZO ho — ek smart AI voice assistant jo Hindi/Hinglish mein baat karta hai.
+
+Rules:
+- Hamesha Hindi ya Hinglish mein jawab do
+- Short aur helpful raho (2-3 sentences max)
+- Agar koi command detect hui hai to pehle confirm karo phir bolna kya kar rahe ho
+- Friendly aur confident tone rakho
+- Detected intent: $intentName
+- Agar koi general sawal hai to directly jawab do"""
+        } else {
+            """You are TARZO — a smart AI voice assistant.
+
+Rules:
+- Keep responses short and helpful (2-3 sentences max)
+- If a command was detected, confirm what you're doing
+- Be friendly and confident
+- Detected intent: $intentName"""
+        }
+    }
+
+    /**
+     * Clear conversation history.
+     */
+    fun clearHistory() {
+        conversationHistory.clear()
     }
 
     private fun generateDynamicResponse(
@@ -197,6 +350,9 @@ class LLMClient @Inject constructor() {
     }
 
     companion object {
+        private const val TAG = "LLMClient"
+        private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
+
         private data class ResponseKey(val intent: IntentType, val lang: String)
 
         private val responseMap = mapOf(

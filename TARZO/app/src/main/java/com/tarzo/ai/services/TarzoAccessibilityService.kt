@@ -204,7 +204,7 @@ class TarzoAccessibilityService : AccessibilityService() {
 
     // ── Scroll Actions ────────────────────────────────────────────
 
-    private enum class ScrollDirection { UP, DOWN }
+    enum class ScrollDirection { UP, DOWN }
 
     /**
      * Performs a scroll on the first scrollable node found in the tree.
@@ -264,7 +264,7 @@ class TarzoAccessibilityService : AccessibilityService() {
             result.add(node)
         }
         val actions = node.actions
-        if (actions != null && AccessibilityNodeInfo.ACTION_SCROLL_FORWARD in actions) {
+        if (actions != null && actions?.any { it == AccessibilityNodeInfo.ACTION_SCROLL_FORWARD } == true) {
             if (!result.contains(node)) {
                 result.add(node)
             }

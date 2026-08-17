@@ -10,11 +10,11 @@ activity-compose = "1.9.3"
 navigation-compose = "2.8.5"
 hilt-navigation-compose = "1.2.0"
 datastore = "1.1.1"
-room = "2.6.1"
+room = "2.7.0-alpha12"
 media3 = "1.5.1"
 mlkit-text = "16.0.1"
 mlkit-object = "17.0.2"
-mlkit-image-label = "4.4.0"
+mlkit-image-label = "17.0.8"
 camerax = "1.4.1"
 retrofit = "2.11.0"
 okhttp = "4.12.0"
@@ -71,7 +71,7 @@ media3-session = { group = "androidx.media3", name = "media3-session", version.r
 
 # ML Kit
 mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkit-text" }
-mlkit-object-detection = { group = "com.google.mlkit", name = "object-detection", version.ref = "mlkit-object" }
+mlkit-objdetect = { group = "com.google.mlkit", name = "object-detection", version.ref = "mlkit-object" }
 mlkit-image-labeling = { group = "com.google.mlkit", name = "image-labeling", version.ref = "mlkit-image-label" }
 
 # Network

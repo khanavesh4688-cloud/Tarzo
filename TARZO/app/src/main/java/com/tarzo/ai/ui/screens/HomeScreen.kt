@@ -77,19 +77,19 @@ fun HomeScreen(
     }
 
     // Cycle orb state for demo purposes when no real state is wired.
-    val demoOrbState by rememberInfiniteTransition(label = "orb_cycle").animateValue(
-        initialValue = 0,
-        targetValue = 3,
-        typeConverter = Int.Companion,
+    val demoOrbStateFloat by rememberInfiniteTransition(label = "orb_cycle").animateFloat(
+        initialValue = 0f,
+        targetValue = 4f,
         animationSpec = infiniteRepeatable(
             animation = tween(4000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart,
         ),
         label = "orb_demo",
     )
+    val demoOrbState = demoOrbStateFloat.toInt().coerceIn(0, 3)
     val effectiveOrbState = remember(state.orbState, demoOrbState) {
         if (state.orbState != OrbState.IDLE) state.orbState
-        else listOf(OrbState.IDLE, OrbState.LISTENING, OrbState.THINKING, OrbState.SPEAKING)[demoOrbState]
+        else listOf(OrbState.IDLE, OrbState.LISTENING, OrbState.PROCESSING, OrbState.SPEAKING)[demoOrbState]
     }
 
     Box(
@@ -148,7 +148,7 @@ fun HomeScreen(
             ) {
                 TarzoOrb(
                     state = effectiveOrbState,
-                    size = 180.dp,
+                    size = 180,
                 )
             }
 
@@ -265,8 +265,9 @@ private fun StatusIndicator(
         targetValue = when (orbState) {
             OrbState.IDLE -> TarzoTextSecondary
             OrbState.LISTENING -> TarzoAccent
-            OrbState.THINKING -> TarzoAccentSecondary
-            OrbState.SPEAKING -> TarzoSuccess
+            OrbState.PROCESSING -> TarzoAccentSecondary
+            OrbState.ERROR -> TarzoError
+            else -> TarzoTextSecondary
         },
         label = "status_color",
     )

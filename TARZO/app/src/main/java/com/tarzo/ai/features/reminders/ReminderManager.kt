@@ -9,19 +9,11 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.PrimaryKey
-import androidx.room.Query
-import androidx.room.TypeConverter
-import androidx.room.Update
 import com.tarzo.ai.util.Result
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -32,9 +24,8 @@ import javax.inject.Singleton
 
 // ── Entity ────────────────────────────────────────────────────────────
 
-@Entity(tableName = "reminders")
 data class ReminderEntity(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val id: Long = 0,
     val title: String,
     val time: Long,
     val type: ReminderType,
@@ -86,46 +77,49 @@ data class ReminderItem(
     }
 }
 
-// ── DAO ───────────────────────────────────────────────────────────────
+// ── DAO (in-memory implementation) ─────────────────────────────────────
 
-@Dao
-interface ReminderDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(reminder: ReminderEntity): Long
+class ReminderDao @Inject constructor() {
+    private val reminders = MutableStateFlow(mutableListOf<ReminderEntity>())
+    private val nextId = java.util.concurrent.atomic.AtomicLong(1L)
 
-    @Update
-    suspend fun update(reminder: ReminderEntity)
+    suspend fun insert(reminder: ReminderEntity): Long {
+        val newId = if (reminder.id > 0) reminder.id else nextId.getAndIncrement()
+        val item = if (reminder.id > 0) reminder else reminder.copy(id = newId)
+        reminders.value.add(item)
+        return item.id
+    }
 
-    @Query("DELETE FROM reminders WHERE id = :id")
-    suspend fun deleteById(id: Long)
+    suspend fun update(reminder: ReminderEntity) {
+        val index = reminders.value.indexOfFirst { it.id == reminder.id }
+        if (index >= 0) {
+            reminders.value[index] = reminder
+        }
+    }
 
-    @Query("UPDATE reminders SET isEnabled = :enabled WHERE id = :id")
-    suspend fun setEnabled(id: Long, enabled: Boolean)
+    suspend fun deleteById(id: Long) {
+        reminders.value.removeAll { it.id == id }
+    }
 
-    @Query("SELECT * FROM reminders ORDER BY time ASC")
-    fun getAllReminders(): Flow<List<ReminderEntity>>
+    suspend fun setEnabled(id: Long, enabled: Boolean) {
+        val index = reminders.value.indexOfFirst { it.id == id }
+        if (index >= 0) {
+            reminders.value[index] = reminders.value[index].copy(isEnabled = enabled)
+        }
+    }
 
-    @Query("SELECT * FROM reminders WHERE type = :type ORDER BY time ASC")
-    fun getByType(type: ReminderType): Flow<List<ReminderEntity>>
+    fun getAllReminders(): Flow<List<ReminderEntity>> = reminders
 
-    @Query("SELECT * FROM reminders WHERE id = :id")
-    suspend fun getById(id: Long): ReminderEntity?
+    fun getByType(type: ReminderType): Flow<List<ReminderEntity>> =
+        reminders.map { list -> list.filter { it.type == type } }
 
-    @Query("SELECT COUNT(*) FROM reminders WHERE isEnabled = 1")
-    suspend fun getActiveCount(): Int
+    suspend fun getById(id: Long): ReminderEntity? = reminders.value.find { it.id == id }
 
-    @Query("DELETE FROM reminders WHERE type = :type AND time < :beforeTime")
-    suspend fun deleteExpiredByType(type: ReminderType, beforeTime: Long)
-}
+    suspend fun getActiveCount(): Int = reminders.value.count { it.isEnabled }
 
-// ── Type Converters ───────────────────────────────────────────────────
-
-class Converters {
-    @TypeConverter
-    fun fromReminderType(value: ReminderType): String = value.name
-
-    @TypeConverter
-    fun toReminderType(value: String): ReminderType = ReminderType.fromString(value)
+    suspend fun deleteExpiredByType(type: ReminderType, beforeTime: Long) {
+        reminders.value.removeAll { it.type == type && it.time < beforeTime }
+    }
 }
 
 // ── BroadcastReceiver ─────────────────────────────────────────────────
@@ -176,7 +170,7 @@ class ReminderReceiver : BroadcastReceiver() {
 // ── Manager ───────────────────────────────────────────────────────────
 
 /**
- * Manages alarms, timers, and reminders using [AlarmManager] and local Room storage.
+ * Manages alarms, timers, and reminders using [AlarmManager] and local storage.
  * Each reminder is stored as a [ReminderEntity] and scheduled via a [PendingIntent]
  * that triggers [ReminderReceiver] at the specified time.
  */
@@ -282,7 +276,6 @@ class ReminderManager @Inject constructor(
 
             if (id > 0) {
                 scheduleAlarm(id, entity.title, entity.time, entity.type)
-                val formattedTime = SimpleDateFormat("hh:mm a, dd MMM", Locale.getDefault()).format(Date(time))
                 Result.Success(id)
             } else {
                 Result.Error(

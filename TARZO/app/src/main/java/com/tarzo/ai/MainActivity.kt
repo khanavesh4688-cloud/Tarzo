@@ -193,7 +193,7 @@ class MainActivity : ComponentActivity() {
         Log.i(TAG, "MainActivity created")
     }
 
-    override fun onNewIntent(intent: Intent?) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         intent?.let { handleIntent(it) }
     }
@@ -227,8 +227,8 @@ class MainActivity : ComponentActivity() {
                 Log.d(TAG, "Wake word action received in MainActivity")
                 voiceService?.startListening()
             }
-            CallStateReceiver.ACTION_INCOMING_CALL -> {
-                val caller = intent.getStringExtra(CallStateReceiver.EXTRA_CALLER_NAME)
+            "com.tarzo.ai.action.INCOMING_CALL" -> {
+                val caller = intent.getStringExtra("extra_caller_name")
                 Log.d(TAG, "Incoming call notification: $caller")
             }
         }
