@@ -214,7 +214,7 @@ class TTSManager @Inject constructor(
 
         _status.value = TTSStatus(TTSState.SPEAKING, utteranceId)
         val result = tts?.speak(safeText, queueMode, null, utteranceId)
-        if (result == TextToSpeech.ERROR || result == TextToSpeech.FAILURE) {
+        if (result == TextToSpeech.ERROR) {
             Log.e(TAG, "speak() returned ERROR for: $safeText")
             _status.value = TTSStatus(TTSState.ERROR, errorMessage = "Failed to enqueue speech")
             return null
