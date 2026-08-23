@@ -109,6 +109,7 @@ dependencies {
     implementation(libs.retrofit.gson)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
+    implementation(libs.okhttp.sse)
 
     // Image loading
     implementation(libs.coil.compose)

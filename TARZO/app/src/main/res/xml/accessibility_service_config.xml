@@ -2,8 +2,8 @@
 <!--
     TARZO Accessibility Service Configuration
 
-    This config enables TARZO to observe and interact with the screen
-    for automated command execution. All processing happens on-device.
+    Full-screen access: can read, click, scroll, type, swipe, take screenshots,
+    and perform gestures on any screen element across all apps.
 
     Gesture mapping for scroll/click actions is handled programmatically
     in TarzoAccessibilityService.kt via:
@@ -11,13 +11,16 @@
       - performGlobalAction(GLOBAL_ACTION_SCROLL_BACKWARD)
       - AccessibilityNodeInfo.performAction(ACTION_CLICK)
       - AccessibilityNodeInfo.performAction(ACTION_SCROLL_FORWARD)
+      - GestureDescription for custom tap/swipe/long-press
 -->
 <accessibility-service
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged|typeViewClicked|typeViewFocused|typeViewTextChanged"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged|typeViewClicked|typeViewFocused|typeViewTextChanged|typeViewLongClicked|typeViewScrolled|typeGestureDetectionStart|typeGestureDetectionEnd"
     android:accessibilityFeedbackType="feedbackGeneric"
-    android:accessibilityFlags="flagDefault|flagReportViewIds|flagRetrieveInteractiveWindows|flagIncludeNotImportantViews"
+    android:accessibilityFlags="flagDefault|flagReportViewIds|flagRetrieveInteractiveWindows|flagIncludeNotImportantViews|flagRequestTouchExplorationMode"
     android:canRetrieveWindowContent="true"
-    android:notificationTimeout="100"
+    android:canPerformGestures="true"
+    android:canTakeScreenshot="true"
+    android:notificationTimeout="50"
     android:description="@string/accessibility_service_description"
     android:settingsActivity="com.tarzo.ai.MainActivity" />

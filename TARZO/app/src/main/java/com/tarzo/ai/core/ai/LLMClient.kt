@@ -11,6 +11,9 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.sse.EventSource
+import okhttp3.sse.EventSourceListener
+import okhttp3.sse.EventSources
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -27,7 +30,8 @@ data class ChatRequest(
     val model: String = "gpt-4o-mini",
     val messages: List<ChatMessage>,
     val temperature: Float = 0.7f,
-    val max_tokens: Int = 512
+    val max_tokens: Int = 200,
+    val stream: Boolean = false
 )
 
 data class ChatChoice(
@@ -67,11 +71,14 @@ class LLMClient @Inject constructor(
 
     private val httpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(15, TimeUnit.SECONDS)
             .build()
     }
+
+    // Callback for streaming partial responses to UI
+    var onStreamChunk: ((String) -> Unit)? = null
 
     // Conversation history for multi-turn context (last N messages)
     private val conversationHistory = mutableListOf<ChatMessage>()
@@ -133,18 +140,115 @@ class LLMClient @Inject constructor(
             conversationHistory.removeAt(0)
         }
 
-        // Build messages list
+        // Build messages list (keep last 4 turns for speed)
         val messages = mutableListOf<ChatMessage>()
         messages.add(ChatMessage(role = "system", content = systemPrompt))
-        messages.addAll(conversationHistory)
+        val recentHistory = conversationHistory.takeLast(4)
+        messages.addAll(recentHistory)
 
-        val request = ChatRequest(messages = messages)
+        // Try streaming first for faster perceived response
+        return try {
+            callLlmStreaming(messages, apiKey, baseUrl)
+        } catch (e: Exception) {
+            Log.w(TAG, "Streaming failed, falling back to non-streaming: ${e.message}")
+            callLlmNonStreaming(messages, apiKey, baseUrl)
+        }
+    }
+
+    /**
+     * Streaming API call - returns partial chunks via onStreamChunk callback
+     * and accumulates the full response.
+     */
+    private fun callLlmStreaming(
+        messages: List<ChatMessage>,
+        apiKey: String,
+        baseUrl: String
+    ): String {
+        val request = ChatRequest(messages = messages, stream = true)
         val jsonBody = gson.toJson(request)
 
         val cleanBase = baseUrl.trimEnd('/')
         val endpoint = "${cleanBase}/v1/chat/completions"
 
-        Log.d(TAG, "Calling LLM API: $endpoint")
+        Log.d(TAG, "Calling LLM API (streaming): $endpoint")
+
+        val httpRequest = Request.Builder()
+            .url(endpoint)
+            .addHeader("Authorization", "Bearer $apiKey")
+            .addHeader("Content-Type", "application/json")
+            .addHeader("Accept", "text/event-stream")
+            .post(jsonBody.toRequestBody(JSON_MEDIA_TYPE))
+            .build()
+
+        val fullResponse = StringBuilder()
+        val done = java.util.concurrent.CountDownLatch(1)
+        val errorRef = java.util.concurrent.atomic.AtomicReference<Exception>(null)
+
+        val factory = EventSources.createFactory(httpClient)
+        factory.newEventSource(httpRequest, object : EventSourceListener() {
+            override fun onEvent(eventSource: EventSource, id: String?, type: String?, data: String) {
+                if (data == "[DONE]") {
+                    done.countDown()
+                    return
+                }
+                try {
+                    val jsonObj = gson.fromJson(data, java.util.Map::class.java)
+                    val choices = jsonObj["choices"] as? List<*>
+                    val firstChoice = choices?.firstOrNull() as? Map<*, *>
+                    val delta = firstChoice?.get("delta") as? Map<*, *>
+                    val content = delta?.get("content") as? String
+                    if (!content.isNullOrBlank()) {
+                        fullResponse.append(content)
+                        onStreamChunk?.invoke(content)
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Error parsing SSE chunk: ${e.message}")
+                }
+            }
+
+            override fun onFailure(eventSource: EventSource, t: Throwable?, response: okhttp3.Response?) {
+                val msg = t?.message ?: "HTTP ${response?.code}"
+                errorRef.set(RuntimeException("Stream failed: $msg"))
+                done.countDown()
+            }
+
+            override fun onClosed(eventSource: EventSource) {
+                done.countDown()
+            }
+        })
+
+        // Wait with timeout
+        done.await(15, TimeUnit.SECONDS)
+        val error = errorRef.get()
+        if (error != null) throw error
+
+        val reply = fullResponse.toString().trim()
+        if (reply.isBlank()) throw RuntimeException("Empty streaming response")
+
+        // Add to history
+        conversationHistory.add(ChatMessage(role = "assistant", content = reply))
+        if (conversationHistory.size > MAX_HISTORY) {
+            conversationHistory.removeAt(0)
+        }
+
+        return reply
+    }
+
+    /**
+     * Non-streaming fallback API call.
+     */
+    private fun callLlmNonStreaming(
+        messages: List<ChatMessage>,
+        apiKey: String,
+        baseUrl: String
+    ): String {
+        val request = ChatRequest(messages = messages, stream = false)
+        val jsonBody = gson.toJson(request)
+
+        val cleanBase = baseUrl.trimEnd('/')
+        val endpoint = "${cleanBase}/v1/chat/completions"
+
+        Log.d(TAG, "Calling LLM API (non-streaming): $endpoint")
 
         val httpRequest = Request.Builder()
             .url(endpoint)

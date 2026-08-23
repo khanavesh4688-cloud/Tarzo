@@ -313,8 +313,8 @@ class VoiceAssistantService : Service() {
         // This runs in parallel with response generation
         val actionJob = serviceScope.launch { commandProcessor.execute(intentResult, userText) }
 
-        // Step 3: Generate response - offline first, then try LLM with 8s timeout
-        val responseText = withTimeoutOrNull(8000L) {
+        // Step 3: Generate response - try LLM with streaming (fast first token), fallback to offline
+        val responseText = withTimeoutOrNull(12000L) {
             llmClient.generateResponseAsync(userText, intentResult, currentLanguage)
         } ?: run {
             Log.w(TAG, "LLM timed out, using offline response")
@@ -340,9 +340,9 @@ class VoiceAssistantService : Service() {
         serviceScope.launch {
             try {
                 val prefs = TarzoApp.instance.dataStore.data.first()
-                currentLanguage = prefs[Tarzo.KEY_ACTIVE_LANGUAGE"] ?: Constants.DEFAULT_LANGUAGE
-                wakeWordEnabled = prefs[Tarzo.KEY_WAKE_WORD_ENABLED"]?.toBoolean() ?: true
-                val speed = prefs[Tarzo.KEY_TTS_SPEED]
+                currentLanguage = prefs[TarzoApp.KEY_ACTIVE_LANGUAGE] ?: Constants.DEFAULT_LANGUAGE
+                wakeWordEnabled = prefs[TarzoApp.KEY_WAKE_WORD_ENABLED]?.toBoolean() ?: true
+                val speed = prefs[TarzoApp.KEY_TTS_SPEED]
                         ?.toFloatOrNull() ?: Constants.DEFAULT_TTS_SPEED
                 val pitch = prefs[TarzoApp.KEY_VOICE_PITCH]
                         ?.toFloatOrNull() ?: Constants.DEFAULT_VOICE_PITCH

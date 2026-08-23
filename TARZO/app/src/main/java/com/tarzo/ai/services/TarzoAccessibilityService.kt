@@ -11,6 +11,7 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.graphics.Rect
+import android.os.Bundle
 import com.tarzo.ai.features.automation.ScreenAutomationManager
 
 /**
@@ -33,13 +34,32 @@ class TarzoAccessibilityService : AccessibilityService() {
             eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
                     AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED or
                     AccessibilityEvent.TYPE_VIEW_CLICKED or
-                    AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED
+                    AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED or
+                    AccessibilityEvent.TYPE_VIEW_LONG_CLICKED or
+                    AccessibilityEvent.TYPE_VIEW_SCROLLED or
+                    AccessibilityEvent.TYPE_GESTURE_DETECTION_START or
+                    AccessibilityEvent.TYPE_GESTURE_DETECTION_END
             feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
             flags = AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS or
                     AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or
-                    AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS
+                    AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS or
+                    AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS
             notificationTimeout = 50
             packageNames = null // Observe ALL packages
+            isAccessibilityTool = true
+        }
+
+        // Enable gesture dispatch for full screen control
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            serviceInfo = serviceInfo.apply {
+                // Gesture capabilities are set via XML canPerformGestures
+            }
+        }
+
+        // Request touch exploration mode for full screen reading
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            serviceInfo.flags = serviceInfo.flags or
+                    AccessibilityServiceInfo.FLAG_REQUEST_TOUCH_EXPLORATION_MODE
         }
 
         registerCommandReceiver()
@@ -56,6 +76,16 @@ class TarzoAccessibilityService : AccessibilityService() {
             }
             AccessibilityEvent.TYPE_VIEW_CLICKED -> {
                 Log.d(TAG, "Click: ${event.source?.text} in ${event.packageName}")
+            }
+            AccessibilityEvent.TYPE_VIEW_LONG_CLICKED -> {
+                Log.d(TAG, "Long click: ${event.source?.text} in ${event.packageName}")
+            }
+            AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
+                Log.d(TAG, "Scroll in ${event.packageName}")
+            }
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
+                // Track content changes for screen reading
+                Log.v(TAG, "Content changed in ${event.packageName}")
             }
         }
     }
@@ -463,6 +493,157 @@ class TarzoAccessibilityService : AccessibilityService() {
             `package` = packageName
         }
         sendBroadcast(resultIntent)
+    }
+
+    // ── Advanced Screen Control ─────────────────────────────────
+
+    /**
+     * Find all clickable nodes on screen and return their text/description.
+     */
+    fun getAllClickableElements(): List<String> {
+        val root = rootInActiveWindow ?: return emptyList()
+        val elements = mutableListOf<String>()
+        findClickableRecursive(root, elements)
+        return elements
+    }
+
+    private fun findClickableRecursive(node: AccessibilityNodeInfo, result: MutableList<String>) {
+        if (node.isClickable) {
+            node.text?.toString()?.trim()?.let { if (it.isNotBlank()) result.add(it) }
+            node.contentDescription?.toString()?.trim()?.let { if (it.isNotBlank()) result.add(it) }
+        }
+        for (i in 0 until node.childCount) {
+            node.getChild(i)?.let { findClickableRecursive(it, result) }
+        }
+    }
+
+    /**
+     * Find and click the first editable/input field to focus it.
+     */
+    fun focusFirstInput(): Boolean {
+        val root = rootInActiveWindow ?: return false
+        return focusFirstInputRecursive(root)
+    }
+
+    private fun focusFirstInputRecursive(node: AccessibilityNodeInfo): Boolean {
+        if (node.isEditable) {
+            return node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+        }
+        for (i in 0 until node.childCount) {
+            if (node.getChild(i)?.let { focusFirstInputRecursive(it) } == true) return true
+        }
+        return false
+    }
+
+    /**
+     * Perform a two-finger swipe (e.g., for notifications panel).
+     */
+    fun performTwoFingerSwipe(
+        startX: Int, startY: Int,
+        endX: Int, endY: Int,
+        durationMs: Long = 300
+    ): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val path1 = android.graphics.Path().apply {
+                moveTo(startX.toFloat(), startY.toFloat())
+                lineTo(endX.toFloat(), endY.toFloat())
+            }
+            val path2 = android.graphics.Path().apply {
+                moveTo((startX + 100).toFloat(), startY.toFloat())
+                lineTo((endX + 100).toFloat(), endY.toFloat())
+            }
+            val gesture = GestureDescription.Builder()
+                .addStroke(GestureDescription.StrokeDescription(path1, 0, durationMs))
+                .addStroke(GestureDescription.StrokeDescription(path2, 0, durationMs))
+                .build()
+            dispatchGesture(gesture, null, null)
+            Log.d(TAG, "Two-finger swipe")
+            true
+        } else {
+            false
+        }
+    }
+
+    /**
+     * Perform a pinch zoom gesture.
+     */
+    fun performPinch(
+        centerX: Int, centerY: Int,
+        isZoomIn: Boolean,
+        durationMs: Long = 400
+    ): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val offset = if (isZoomIn) 300 else 300
+            val startOffset = if (isZoomIn) offset else 50
+            val endOffset = if (isZoomIn) 50 else offset
+
+            val path1 = android.graphics.Path().apply {
+                moveTo((centerX - startOffset).toFloat(), centerY.toFloat())
+                lineTo((centerX - endOffset).toFloat(), centerY.toFloat())
+            }
+            val path2 = android.graphics.Path().apply {
+                moveTo((centerX + startOffset).toFloat(), centerY.toFloat())
+                lineTo((centerX + endOffset).toFloat(), centerY.toFloat())
+            }
+            val gesture = GestureDescription.Builder()
+                .addStroke(GestureDescription.StrokeDescription(path1, 0, durationMs))
+                .addStroke(GestureDescription.StrokeDescription(path2, 0, durationMs))
+                .build()
+            dispatchGesture(gesture, null, null)
+            Log.d(TAG, "Pinch ${if (isZoomIn) "in" else "out"}")
+            true
+        } else {
+            false
+        }
+    }
+
+    /**
+     * Perform a long press with delay at specific coordinates.
+     */
+    fun performLongPressWithDelay(x: Int, y: Int, delayMs: Long = 500): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            val path = android.graphics.Path().apply { moveTo(x.toFloat(), y.toFloat()) }
+            val stroke = GestureDescription.StrokeDescription(path, 0, delayMs)
+            val gesture = GestureDescription.Builder()
+                .addStroke(stroke)
+                .build()
+            dispatchGesture(gesture, null, null)
+            Log.d(TAG, "Long press at ($x, $y) for ${delayMs}ms")
+            true
+        } else {
+            false
+        }
+    }
+
+    /**
+     * Double tap at coordinates.
+     */
+    fun performDoubleTap(x: Int, y: Int): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val path = android.graphics.Path().apply { moveTo(x.toFloat(), y.toFloat()) }
+            val click1 = GestureDescription.StrokeDescription(path, 0, 50)
+            val click2 = GestureDescription.StrokeDescription(path, 100, 50)
+            val gesture = GestureDescription.Builder()
+                .addStroke(click1)
+                .addStroke(click2)
+                .build()
+            dispatchGesture(gesture, null, null)
+            Log.d(TAG, "Double tap at ($x, $y)")
+            true
+        } else {
+            false
+        }
+    }
+
+    /**
+     * Drag from one point to another (for reordering, moving elements).
+     */
+    fun performDrag(
+        startX: Int, startY: Int,
+        endX: Int, endY: Int,
+        durationMs: Long = 500
+    ): Boolean {
+        return performSwipe(startX, startY, endX, endY, durationMs)
     }
 
     companion object {

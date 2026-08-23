@@ -1,6 +1,10 @@
 package com.tarzo.ai.core.voice
 
 import android.content.Context
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
+import android.os.Build
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.util.Log
@@ -39,6 +43,10 @@ class TTSManager @Inject constructor(
     private var currentLocale: Locale = Locale("hi", "IN")
     private var utteranceCounter = 0
     private val pendingUtterances = ArrayDeque<String>()
+    private val audioManager: AudioManager by lazy {
+        context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    }
+    private var audioFocusRequest: AudioFocusRequest? = null
 
     // Single init lock to prevent double initialization
     private val initMutex = kotlinx.coroutines.sync.Mutex()
@@ -67,6 +75,13 @@ class TTSManager @Inject constructor(
 
                     tts = TextToSpeech(context.applicationContext) { status ->
                         if (status == TextToSpeech.SUCCESS) {
+                            // Set audio attributes so TTS uses media/music stream
+                            tts?.setAudioAttributes(
+                                AudioAttributes.Builder()
+                                    .setUsage(AudioAttributes.USAGE_ASSISTANT)
+                                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                                    .build()
+                            )
                             val langResult = tts?.setLanguage(currentLocale)
                             if (langResult == TextToSpeech.LANG_MISSING_DATA ||
                                 langResult == TextToSpeech.LANG_NOT_SUPPORTED
@@ -150,6 +165,9 @@ class TTSManager @Inject constructor(
 
         val utteranceId = "tts_${utteranceCounter++}"
 
+        // Request audio focus before speaking
+        requestAudioFocus()
+
         tts?.setSpeechRate(speechRate)
         tts?.setPitch(pitch)
 
@@ -222,7 +240,45 @@ class TTSManager @Inject constructor(
     fun stop() {
         pendingUtterances.clear()
         tts?.stop()
+        abandonAudioFocus()
         _status.value = TTSStatus(TTSState.IDLE)
+    }
+
+    private fun requestAudioFocus() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (audioFocusRequest == null) {
+                    audioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+                        .setAudioAttributes(
+                            AudioAttributes.Builder()
+                                .setUsage(AudioAttributes.USAGE_ASSISTANT)
+                                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                                .build()
+                        )
+                        .setAcceptsDelayedFocusGain(false)
+                        .build()
+                }
+                audioManager.requestAudioFocus(audioFocusRequest!!)
+            } else {
+                @Suppress("DEPRECATION")
+                audioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Audio focus request failed: ${e.message}")
+        }
+    }
+
+    private fun abandonAudioFocus() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                audioFocusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
+            } else {
+                @Suppress("DEPRECATION")
+                audioManager.abandonAudioFocus(null)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Audio focus abandon failed: ${e.message}")
+        }
     }
 
     fun setLanguage(locale: Locale): Boolean {
@@ -270,9 +326,11 @@ class TTSManager @Inject constructor(
 
     fun shutdown() {
         stop()
+        abandonAudioFocus()
         tts?.shutdown()
         tts = null
         isInitialized = false
+        audioFocusRequest = null
     }
 
     fun getAvailableLanguages(): List<Locale> {
