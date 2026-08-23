@@ -391,7 +391,19 @@ Rules:
             ResponseKey(IntentType.BLUETOOTH_TOGGLE, "hi-IN") to
                     "Bluetooth toggle kar diya",
             ResponseKey(IntentType.PLAY_MUSIC, "hi-IN") to
-                    "Music chala raha hoon"
+                    "Music chala raha hoon",
+            ResponseKey(IntentType.GO_BACK, "hi-IN") to
+                    "Wapas gaya",
+            ResponseKey(IntentType.GO_HOME, "hi-IN") to
+                    "Home screen par gaya",
+            ResponseKey(IntentType.GO_RECENTS, "hi-IN") to
+                    "Recent apps khol diye",
+            ResponseKey(IntentType.TYPE_TEXT, "hi-IN") to
+                    "Likh diya",
+            ResponseKey(IntentType.CLICK_ELEMENT, "hi-IN") to
+                    "Click kar diya",
+            ResponseKey(IntentType.LONG_PRESS_ELEMENT, "hi-IN") to
+                    "Long press kar diya"
         )
     }
 }

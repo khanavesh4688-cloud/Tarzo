@@ -46,6 +46,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -144,7 +145,7 @@ class VoiceAssistantService : Service() {
         super.onCreate()
         startForeground(FOREGROUND_NOTIFICATION_ID, buildNotification("TARZO Ready"))
         loadSettings()
-        serviceScope.launch { ttsManager.initialize() }
+        ttsManager.initializeAsync()
         Log.d(TAG, "VoiceAssistantService created")
     }
 
@@ -212,12 +213,10 @@ class VoiceAssistantService : Service() {
      */
     fun processUserInput(text: String) {
         serviceScope.launch {
-            _state.value = AssistantState.PROCESSING
-            updateNotification("Processing...")
             val response = handleUserCommand(text)
             _state.value = AssistantState.SPEAKING
             updateNotification("Speaking...")
-            ttsManager.speak(response)
+            ttsManager.speakAndWait(response)
             _state.value = AssistantState.IDLE
             updateNotification("TARZO Ready")
         }
@@ -245,7 +244,14 @@ class VoiceAssistantService : Service() {
                     }
                     is SpeechState.FinalResult -> {
                         _partialSpeech.value = ""
-                        handleUserCommand(speechState.text)
+                        serviceScope.launch {
+                            val response = handleUserCommand(speechState.text)
+                            _state.value = AssistantState.SPEAKING
+                            updateNotification("Speaking...")
+                            ttsManager.speakAndWait(response)
+                            _state.value = AssistantState.IDLE
+                            updateNotification("TARZO Ready")
+                        }
                     }
                     is SpeechState.Error -> {
                         Log.e(TAG, "Speech error: ${speechState.message}")
@@ -299,13 +305,25 @@ class VoiceAssistantService : Service() {
         _state.value = AssistantState.PROCESSING
         updateNotification("Processing...")
 
+        // Step 1: Detect intent (fast, rule-based)
         val intentResult = intentDetector.detectIntent(userText)
         Log.d(TAG, "Detected intent: ${intentResult.intent} (confidence: ${intentResult.confidence})")
 
-        val responseText = llmClient.generateResponse(userText, intentResult, currentLanguage)
+        // Step 2: Execute the device action FIRST (flashlight, call, sms, etc.)
+        // This runs in parallel with response generation
+        val actionJob = serviceScope.launch { commandProcessor.execute(intentResult, userText) }
 
-        commandProcessor.execute(intentResult, userText)
+        // Step 3: Generate response - offline first, then try LLM with 8s timeout
+        val responseText = withTimeoutOrNull(8000L) {
+            llmClient.generateResponseAsync(userText, intentResult, currentLanguage)
+        } ?: run {
+            Log.w(TAG, "LLM timed out, using offline response")
+            llmClient.generateResponse(userText, intentResult, currentLanguage)
+        }
 
+        actionJob.join() // Wait for device action to complete
+
+        // Save to conversation history
         val turn = ConversationTurn(
             userText = userText,
             responseText = responseText,
@@ -313,8 +331,6 @@ class VoiceAssistantService : Service() {
         )
         _conversation.value = _conversation.value + turn
 
-        _state.value = AssistantState.SPEAKING
-        updateNotification("Speaking...")
         return responseText
     }
 
@@ -438,6 +454,7 @@ class CommandProcessor @javax.inject.Inject constructor(
     private val reminderManager: ReminderManager,
     private val memoryManager: MemoryManager,
     private val searchManager: SearchManager,
+    private val screenAutomationManager: com.tarzo.ai.features.automation.ScreenAutomationManager,
     @ApplicationContext private val appContext: Context
 ) {
 
@@ -560,9 +577,11 @@ class CommandProcessor @javax.inject.Inject constructor(
             IntentType.ANTI_THEFT -> {
                 AntiTheftService.start(appContext)
             }
-            IntentType.SCROLL_UP,
+            IntentType.SCROLL_UP -> {
+                screenAutomationManager.scrollUp()
+            }
             IntentType.SCROLL_DOWN -> {
-                // Handled by accessibility service via ScreenAutomationManager
+                screenAutomationManager.scrollDown()
             }
             IntentType.ANALYZE_IMAGE,
             IntentType.OCR_TEXT,
@@ -575,6 +594,27 @@ class CommandProcessor @javax.inject.Inject constructor(
             }
             IntentType.BATTERY_INFO -> {
                 deviceControlManager.getBatteryInfo()
+            }
+            IntentType.GO_BACK -> {
+                screenAutomationManager.goBack()
+            }
+            IntentType.GO_HOME -> {
+                screenAutomationManager.goHome()
+            }
+            IntentType.GO_RECENTS -> {
+                screenAutomationManager.openRecents()
+            }
+            IntentType.TYPE_TEXT -> {
+                val text = intentResult.queryText
+                if (!text.isNullOrBlank()) screenAutomationManager.typeText(text)
+            }
+            IntentType.CLICK_ELEMENT -> {
+                val text = intentResult.queryText
+                if (!text.isNullOrBlank()) screenAutomationManager.clickByText(text)
+            }
+            IntentType.LONG_PRESS_ELEMENT -> {
+                val text = intentResult.queryText
+                if (!text.isNullOrBlank()) screenAutomationManager.longPress(text)
             }
             IntentType.UNKNOWN -> {
                 searchManager.webSearch(rawQuery)

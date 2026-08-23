@@ -416,6 +416,64 @@ class IntentDetector @Inject constructor() {
                     listOf("bluetooth", "chalu"), listOf("bluetooth", "band"),
                     listOf("bluetooth", "toggle")
                 )
+            ),
+            // Go Back
+            IntentRule(
+                IntentType.GO_BACK,
+                keywords = listOf(
+                    listOf("back", "jao"), listOf("wapas", "jao"),
+                    listOf("go", "back"), listOf("peeche", "jao"),
+                    listOf("back", "karo"), listOf("wapas")
+                )
+            ),
+            // Go Home
+            IntentRule(
+                IntentType.GO_HOME,
+                keywords = listOf(
+                    listOf("home", "jao"), listOf("home", "screen"),
+                    listOf("go", "home"), listOf("main", "screen"),
+                    listOf("ghar", "jao")
+                )
+            ),
+            // Go to Recents
+            IntentRule(
+                IntentType.GO_RECENTS,
+                keywords = listOf(
+                    listOf("recent", "apps"), listOf("recent", "jao"),
+                    listOf("open", "recent"), listOf("pichle", "apps")
+                )
+            ),
+            // Type text
+            IntentRule(
+                IntentType.TYPE_TEXT,
+                keywords = listOf(
+                    listOf("type", "karo"), listOf("likho"),
+                    listOf("write"), listOf("type"),
+                    listOf("likh", "do")
+                ),
+                extractors = listOf(QueryExtractor()),
+                baseConfidence = 0.7f
+            ),
+            // Click element
+            IntentRule(
+                IntentType.CLICK_ELEMENT,
+                keywords = listOf(
+                    listOf("click", "karo"), listOf("tap", "karo"),
+                    listOf("daba", "do"), listOf("press", "karo"),
+                    listOf("click"), listOf("dabao")
+                ),
+                extractors = listOf(QueryExtractor()),
+                baseConfidence = 0.7f
+            ),
+            // Long press
+            IntentRule(
+                IntentType.LONG_PRESS_ELEMENT,
+                keywords = listOf(
+                    listOf("long", "press"), listOf("long", "click"),
+                    listOf("lambi", "dabao"), listOf("press", "rakho")
+                ),
+                extractors = listOf(QueryExtractor()),
+                baseConfidence = 0.7f
             )
         )
     }

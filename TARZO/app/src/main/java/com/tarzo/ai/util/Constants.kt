@@ -40,6 +40,12 @@ object Constants {
         ANTI_THEFT,
         WIFI_TOGGLE,
         BLUETOOTH_TOGGLE,
+        GO_BACK,
+        GO_HOME,
+        GO_RECENTS,
+        TYPE_TEXT,
+        CLICK_ELEMENT,
+        LONG_PRESS_ELEMENT,
         UNKNOWN
     }
 

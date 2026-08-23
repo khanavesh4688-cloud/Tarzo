@@ -33,78 +33,137 @@ class TTSManager @Inject constructor(
     val status: StateFlow<TTSStatus> = _status.asStateFlow()
 
     private var tts: TextToSpeech? = null
-    private var isInitialized = false
+    @Volatile private var isInitialized = false
     private var speechRate = 1.0f
     private var pitch = 1.0f
     private var currentLocale: Locale = Locale("hi", "IN")
     private var utteranceCounter = 0
     private val pendingUtterances = ArrayDeque<String>()
-    private val initLatch = kotlinx.coroutines.sync.Mutex()
-    private var initDeferred: CompletableDeferred<Boolean>? = null
+
+    // Single init lock to prevent double initialization
+    private val initMutex = kotlinx.coroutines.sync.Mutex()
+    private var initJob: Job? = null
+
+    fun initializeAsync() {
+        if (initJob?.isActive == true) return
+        initJob = scope.launch {
+            initialize()
+        }
+    }
 
     suspend fun initialize(): Boolean {
         if (isInitialized) return true
-        initDeferred = CompletableDeferred()
+        initMutex.lock()
+        try {
+            if (isInitialized) return true
 
-        return withContext(Dispatchers.Main) {
-            try {
-                tts = TextToSpeech(context.applicationContext) { status ->
-                    if (status == TextToSpeech.SUCCESS) {
-                        isInitialized = true
-                        val result = tts?.setLanguage(currentLocale)
-                        if (result == TextToSpeech.LANG_MISSING_DATA ||
-                            result == TextToSpeech.LANG_NOT_SUPPORTED
-                        ) {
-                            Log.w(TAG, "Language ${currentLocale.toLanguageTag()} not available, falling back to English")
-                            tts?.setLanguage(Locale.ENGLISH)
+            return withContext(Dispatchers.Main) {
+                try {
+                    val initResult = CompletableDeferred<Boolean>()
+
+                    // Shutdown any existing instance first
+                    tts?.shutdown()
+                    tts = null
+
+                    tts = TextToSpeech(context.applicationContext) { status ->
+                        if (status == TextToSpeech.SUCCESS) {
+                            val langResult = tts?.setLanguage(currentLocale)
+                            if (langResult == TextToSpeech.LANG_MISSING_DATA ||
+                                langResult == TextToSpeech.LANG_NOT_SUPPORTED
+                            ) {
+                                Log.w(TAG, "Hindi TTS not available, trying English")
+                                val enResult = tts?.setLanguage(Locale("en", "IN"))
+                                if (enResult == TextToSpeech.LANG_MISSING_DATA ||
+                                    enResult == TextToSpeech.LANG_NOT_SUPPORTED
+                                ) {
+                                    Log.w(TAG, "English-IN TTS not available, trying US English")
+                                    tts?.setLanguage(Locale.US)
+                                }
+                            }
+                            tts?.setSpeechRate(speechRate)
+                            tts?.setPitch(pitch)
+                            isInitialized = true
+                            initResult.complete(true)
+                            Log.i(TAG, "TTS initialized successfully")
+                        } else {
+                            Log.e(TAG, "TTS init failed: $status")
+                            initResult.complete(false)
                         }
-                        tts?.setSpeechRate(speechRate)
-                        tts?.setPitch(pitch)
-                        initDeferred?.complete(true)
-                    } else {
-                        Log.e(TAG, "TTS initialization failed with status: $status")
-                        initDeferred?.complete(false)
                     }
+                    initResult.await()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error initializing TTS", e)
+                    false
                 }
-                initDeferred?.await() ?: false
-            } catch (e: Exception) {
-                Log.e(TAG, "Error initializing TTS", e)
-                false
             }
+        } finally {
+            initMutex.unlock()
         }
     }
 
+    /**
+     * Non-blocking speak. Queues utterance and returns immediately.
+     */
     fun speak(text: String, flush: Boolean = true) {
-        if (!isInitialized) {
-            scope.launch {
-                val success = initialize()
-                if (success) {
-                    speakInternal(text, flush)
-                } else {
+        if (text.isBlank()) return
+        scope.launch {
+            if (!isInitialized) {
+                val ok = initialize()
+                if (!ok) {
                     _status.value = TTSStatus(TTSState.ERROR, errorMessage = "TTS not initialized")
+                    return@launch
                 }
             }
-            return
+            speakInternal(text, flush)
         }
-        speakInternal(text, flush)
     }
 
-    private fun speakInternal(text: String, flush: Boolean) {
-        val safeText = text.take(4000)
+    /**
+     * Blocking speak - suspends until TTS finishes speaking.
+     * Use this when you need to wait for speech to complete.
+     */
+    suspend fun speakAndWait(text: String, flush: Boolean = true) {
+        if (text.isBlank()) return
+        if (!isInitialized) {
+            val ok = initialize()
+            if (!ok) {
+                _status.value = TTSStatus(TTSState.ERROR, errorMessage = "TTS not initialized")
+                return
+            }
+        }
+        val id = speakInternal(text, flush)
+        if (id != null) {
+            // Wait until this utterance finishes
+            status.first { s ->
+                s.state == TTSState.IDLE && s.currentUtteranceId != id
+            }
+            delay(100) // Small buffer after IDLE
+        }
+    }
+
+    /**
+     * @return The utterance ID used, or null on failure.
+     */
+    private fun speakInternal(text: String, flush: Boolean): String? {
+        val safeText = text.take(4000).trim()
+        if (safeText.isEmpty()) return null
+
         val utteranceId = "tts_${utteranceCounter++}"
 
         tts?.setSpeechRate(speechRate)
         tts?.setPitch(pitch)
 
         tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-            override fun onStart(utteranceId: String?) {
-                if (utteranceId == utteranceId) {
+            override fun onStart(id: String?) {
+                if (id == utteranceId) {
                     _status.value = TTSStatus(TTSState.SPEAKING, utteranceId)
+                    Log.d(TAG, "Started speaking: $utteranceId")
                 }
             }
 
-            override fun onDone(utteranceId: String?) {
-                if (utteranceId == utteranceId) {
+            override fun onDone(id: String?) {
+                if (id == utteranceId) {
+                    Log.d(TAG, "Done speaking: $utteranceId")
                     if (pendingUtterances.isNotEmpty()) {
                         val next = pendingUtterances.removeFirst()
                         speakInternal(next, false)
@@ -114,9 +173,9 @@ class TTSManager @Inject constructor(
                 }
             }
 
-            override fun onError(utteranceId: String?) {
-                Log.e(TAG, "TTS error for utterance: $utteranceId")
-                if (utteranceId == utteranceId) {
+            override fun onError(id: String?) {
+                Log.e(TAG, "TTS error for utterance: $id (expected: $utteranceId)")
+                if (id == utteranceId) {
                     if (pendingUtterances.isNotEmpty()) {
                         val next = pendingUtterances.removeFirst()
                         speakInternal(next, false)
@@ -135,10 +194,15 @@ class TTSManager @Inject constructor(
             TextToSpeech.QUEUE_ADD
         }
 
+        _status.value = TTSStatus(TTSState.SPEAKING, utteranceId)
         val result = tts?.speak(safeText, queueMode, null, utteranceId)
-        if (result == TextToSpeech.ERROR) {
+        if (result == TextToSpeech.ERROR || result == TextToSpeech.FAILURE) {
+            Log.e(TAG, "speak() returned ERROR for: $safeText")
             _status.value = TTSStatus(TTSState.ERROR, errorMessage = "Failed to enqueue speech")
+            return null
         }
+        Log.d(TAG, "Enqueued utterance $utteranceId: ${safeText.take(50)}...")
+        return utteranceId
     }
 
     fun speakHinglish(text: String, flush: Boolean = true) {
@@ -153,10 +217,6 @@ class TTSManager @Inject constructor(
             .replace("&", "aur")
             .replace("@", "at the rate")
             .replace("#", "hash")
-            .replace("kya", "kya")
-            .replace("hai", "hai")
-            .replace("nahi", "nahi")
-            .replace("bhai", "bhai")
     }
 
     fun stop() {
@@ -174,9 +234,9 @@ class TTSManager @Inject constructor(
             currentLocale = locale
             Log.d(TAG, "Language set to ${locale.toLanguageTag()}")
         } else {
-            Log.w(TAG, "Failed to set language to ${locale.toLanguageTag()}")
-            tts?.setLanguage(Locale.ENGLISH)
-            currentLocale = Locale.ENGLISH
+            Log.w(TAG, "Failed to set language to ${locale.toLanguageTag()}, falling back to en-IN")
+            tts?.setLanguage(Locale("en", "IN"))
+            currentLocale = Locale("en", "IN")
         }
         return success
     }
@@ -205,6 +265,8 @@ class TTSManager @Inject constructor(
     fun getCurrentLocale(): Locale = currentLocale
 
     fun isSpeaking(): Boolean = tts?.isSpeaking == true
+
+    fun isReady(): Boolean = isInitialized
 
     fun shutdown() {
         stop()
