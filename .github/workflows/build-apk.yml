@@ -1,0 +1,95 @@
+name: Build Debug APK
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'TARZO/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify Java environment
+        run: |
+          java -version
+          echo "JAVA_HOME=$JAVA_HOME"
+          MAJOR=$(java -version 2>&1 | head -1 | cut -d'"' -f2 | cut -d'.' -f1)
+          echo "Detected Java major version: $MAJOR"
+          if [ "$MAJOR" -lt 17 ]; then
+            echo "::error::Java $MAJOR is too old. Java 17 or newer is required."
+            exit 1
+          fi
+          echo "Java $MAJOR confirmed - OK"
+
+      - name: Set up Temurin JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 9.3.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Create temporary debug keystore
+        working-directory: TARZO
+        run: |
+          if [ -f ./debug.keystore ]; then
+            echo "debug.keystore already exists, skipping generation."
+          else
+            keytool -genkeypair \
+              -keystore ./debug.keystore \
+              -storepass android \
+              -alias androiddebugkey \
+              -keypass android \
+              -dname "CN=Android Debug,O=Android,C=US" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000
+            echo "debug.keystore generated."
+          fi
+          if [ ! -f ./debug.keystore ]; then
+            echo "::error::debug.keystore does not exist after generation attempt."
+            exit 1
+          fi
+          echo "debug.keystore ready."
+
+      - name: Build debug APK
+        working-directory: TARZO
+        run: |
+          ./gradlew :app:assembleDebug --stacktrace --no-daemon
+        env:
+          KEYSTORE_PATH: ./debug.keystore
+          KEYSTORE_PASSWORD: android
+          KEY_ALIAS: androiddebugkey
+          KEY_PASSWORD: android
+
+      - name: Verify debug APK exists
+        working-directory: TARZO
+        run: |
+          EXPECTED="app/build/outputs/apk/debug/app-debug.apk"
+          if [ -f "$EXPECTED" ]; then
+            echo "APK found at $EXPECTED"
+            ls -lh "$EXPECTED"
+          else
+            echo "Expected APK not found at $EXPECTED"
+            echo "Searching inside app/build/outputs/apk..."
+            find app/build/outputs/apk -name '*.apk' -type f 2>/dev/null || true
+            echo "::error::Debug APK not found at $EXPECTED and no alternative APK discovered."
+            exit 1
+          fi
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: TARZO/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
